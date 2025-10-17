@@ -1,7 +1,7 @@
 import Foundation
 import AuthenticationServices
 import UIKit
-import WebKit
+@preconcurrency import WebKit
 import AVFoundation
 
 // MARK: - Authentication Mode
@@ -202,8 +202,10 @@ public class VeryOauthSDK: NSObject {
         }
         
         // Configure presentation context
-        webAuthSession?.presentationContextProvider = self
-        webAuthSession?.prefersEphemeralWebBrowserSession = false
+        if #available(iOS 13.0, *) {
+            webAuthSession?.presentationContextProvider = self
+            webAuthSession?.prefersEphemeralWebBrowserSession = false
+        }
         
         // Start authentication
         webAuthSession?.start()
