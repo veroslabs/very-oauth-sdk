@@ -1,0 +1,87 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: "11"
+          distribution: "temurin"
+
+      - name: Setup GPG
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
+          gpg --list-secret-keys
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build and Test
+        run: ./gradlew :android:veryoauthsdk:build :android:veryoauthsdk:test
+
+      - name: Generate Documentation
+        run: ./gradlew :android:veryoauthsdk:dokkaHtml
+
+      - name: Publish to Maven Central
+        run: ./gradlew :android:veryoauthsdk:publishReleasePublicationToOSSRHRepository
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_SECRET_KEY_RING_FILE: ${{ secrets.SIGNING_SECRET_KEY_RING_FILE }}
+
+      - name: Upload Documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-docs
+          path: android/veryoauthsdk/build/dokka/
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## VeryOauthSDK Android v${{ github.ref_name }}
+
+            ### Features
+            - OAuth 2.0 authentication
+            - Dual authentication modes (Custom Tabs / WebView)
+            - Camera permission support
+            - Modern Kotlin API
+
+            ### Installation
+            ```gradle
+            implementation 'com.veryoauthsdk:veryoauthsdk:1.0.0'
+            ```
+
+            Or via JitPack:
+            ```gradle
+            implementation 'com.github.your-org:very-sdk:1.0.0'
+            ```
+          draft: false
+          prerelease: false

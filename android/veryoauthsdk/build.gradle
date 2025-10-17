@@ -1,0 +1,91 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+    id 'signing'
+    id 'org.jetbrains.dokka' version '1.8.20'
+}
+
+android {
+    namespace 'com.veryoauthsdk'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.browser:browser:1.7.0'
+    implementation 'com.google.android.material:material:1.10.0'
+    
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// Create sources JAR
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier = 'sources'
+}
+
+// Create Javadoc JAR
+task javadocJar(type: Jar) {
+    from dokkaHtml
+    archiveClassifier = 'javadoc'
+}
+
+dokkaHtml {
+    outputDirectory.set(file("$buildDir/dokka"))
+    dokkaSourceSets {
+        named("main") {
+            noStdlibLink.set(false)
+            noJdkLink.set(false)
+        }
+    }
+}
+
+// Maven publishing configuration (simplified for now)
+// publishing {
+//     publications {
+//         release(MavenPublication) {
+//             from components.release
+//             
+//             groupId = 'com.verysdk'
+//             artifactId = 'veryoauthsdk'
+//             version = '1.0.0'
+//         }
+//     }
+// }
