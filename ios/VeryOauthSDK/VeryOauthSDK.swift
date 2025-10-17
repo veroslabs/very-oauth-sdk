@@ -136,7 +136,12 @@ public class VeryOauthSDK: NSObject {
         // Choose authentication mode
         switch config.authenticationMode {
         case .systemBrowser:
-            startWebAuthenticationSession(with: authURL, config: config)
+            if #available(iOS 13.0, *) {
+                startWebAuthenticationSession(with: authURL, config: config)
+            } else {
+                // Fallback to WebView for iOS 12
+                startWebViewAuthentication(with: authURL, config: config, presentingViewController: presentingViewController)
+            }
         case .webview:
             startWebViewAuthentication(with: authURL, config: config, presentingViewController: presentingViewController)
         }
@@ -203,10 +208,8 @@ public class VeryOauthSDK: NSObject {
         }
         
         // Configure presentation context
-        if #available(iOS 13.0, *) {
-            webAuthSession?.presentationContextProvider = self
-            webAuthSession?.prefersEphemeralWebBrowserSession = false
-        }
+        webAuthSession?.presentationContextProvider = self
+        webAuthSession?.prefersEphemeralWebBrowserSession = false
         
         // Start authentication
         webAuthSession?.start()
