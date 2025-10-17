@@ -14,7 +14,7 @@ Pod::Spec.new do |spec|
                       DESC
   
   spec.homepage     = "https://github.com/veroslabs/very-oauth-sdk"
-  spec.license      = { :type => "MIT", :file => "LICENSE" }
+  spec.license      = { :type => "MIT" }
   spec.author       = { "VeryOauthSDK Team" => "support@very.org" }
   spec.source       = { 
     :git => "https://github.com/veroslabs/very-oauth-sdk.git", 
@@ -25,16 +25,11 @@ Pod::Spec.new do |spec|
   spec.swift_version = "5.0"
   
   spec.source_files = "ios/VeryOauthSDK/**/*.swift"
-  spec.resources = "ios/VeryOauthSDK/Resources/**/*"
   
   spec.frameworks = "Foundation", "UIKit", "WebKit", "AVFoundation"
   spec.requires_arc = true
   
-  spec.documentation_url = "https://docs.very.org/"
-  spec.social_media_url = "https://docs.very.org/"
+  spec.documentation_url = "https://github.com/veroslabs/very-oauth-sdk"
+  spec.social_media_url = "https://github.com/veroslabs/very-oauth-sdk"
   
-  spec.test_spec 'Tests' do |test_spec|
-    test_spec.source_files = 'ios/VeryOauthSDKTests/**/*.swift'
-    test_spec.frameworks = 'XCTest'
-  end
 end
