@@ -190,6 +190,7 @@ public class VeryOauthSDK: NSObject {
     }
     
     /// Start Web Authentication Session
+    @available(iOS 13.0, *)
     private func startWebAuthenticationSession(with authURL: URL, config: OAuthConfig) {
         // Create web authentication session
         webAuthSession = ASWebAuthenticationSession(
@@ -385,7 +386,7 @@ public class VeryOauthSDK: NSObject {
            let queryItems = components.queryItems {
             
             // Check for error in callback
-            if let error = queryItems.first(where: { $0.name == "error" })?.value {
+            if queryItems.contains(where: { $0.name == "error" }) {
                 completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
                 dismissWebViewIfNeeded()
                 return
@@ -435,10 +436,9 @@ extension VeryOauthSDK: WKNavigationDelegate {
                queryItems.contains(where: { $0.name == "error" }) {
                 
                 // Check for error in callback
-                if let error = queryItems.first(where: { $0.name == "error" })?.value {
+                if queryItems.contains(where: { $0.name == "error" }) {
                     handleAuthenticationResult(callbackURL: nil, error: OAuthError.authenticationFailed)
-                } else if let code = queryItems.first(where: { $0.name == "code" })?.value {
-                    let state = queryItems.first(where: { $0.name == "state" })?.value
+                } else if queryItems.contains(where: { $0.name == "code" }) {
                     handleAuthenticationResult(callbackURL: url, error: nil)
                 } else {
                     handleAuthenticationResult(callbackURL: nil, error: OAuthError.authenticationFailed)
