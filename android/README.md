@@ -15,9 +15,11 @@ Add to your `build.gradle` (Module: app):
 
 ```gradle
 dependencies {
-    implementation 'com.verysdk:veryoauthsdk:1.0.0'
+    implementation 'com.veryoauthsdk:veryoauthsdk:1.0.0'
 }
 ```
+
+**Note**: The library will be available on Maven Central after the first release. For now, you can use JitPack or build from source.
 
 ### JitPack
 
