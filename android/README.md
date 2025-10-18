@@ -46,6 +46,7 @@ dependencies {
   - **System Browser**: Uses Chrome Custom Tabs for seamless browser experience
   - **In-App Browser**: Uses WebView for in-app authentication
 - **📷 Camera Support**: Camera permission handling for WebView mode
+- **🌍 Multi-Language Support**: Built-in support for 10+ languages
 - **🎨 Modern Kotlin API**: Clean, type-safe Kotlin APIs
 - **📚 Complete Documentation**: Comprehensive API documentation
 - **🔒 Security**: Secure authentication with proper error handling
@@ -204,6 +205,18 @@ class VeryOauthSDK {
         config: OAuthConfig,
         callback: (OAuthResult) -> Unit
     )
+
+    /**
+     * Set the language for the SDK
+     * @param language The language to set
+     */
+    fun setLanguage(language: Language)
+
+    /**
+     * Get the current language
+     * @return Current language
+     */
+    fun getCurrentLanguage(): Language
 }
 ```
 
@@ -258,7 +271,89 @@ sealed class OAuthError : Exception() {
 }
 ```
 
+### Language
+
+Supported languages for the SDK.
+
+```kotlin
+enum class Language {
+    ENGLISH,    // English (default)
+    CHINESE,    // Chinese (Simplified)
+    JAPANESE,   // Japanese
+    KOREAN,     // Korean
+    SPANISH,    // Spanish
+    FRENCH,     // French
+    GERMAN,     // German
+    ITALIAN,    // Italian
+    PORTUGUESE, // Portuguese
+    RUSSIAN     // Russian
+}
+```
+
+### LanguageManager
+
+Language manager for handling localized strings.
+
+```kotlin
+object LanguageManager {
+    fun setLanguage(language: Language)
+    fun getCurrentLanguage(): Language
+    fun getCameraPermissionTitle(): String
+    fun getCameraPermissionMessage(): String
+    fun getCameraPermissionDeniedTitle(): String
+    fun getCameraPermissionDeniedMessage(): String
+    fun getGrantPermissionButton(): String
+    fun getContinueWithoutButton(): String
+    fun getOkButton(): String
+}
+```
+
 ## 🔧 Advanced Usage
+
+### Multi-Language Support
+
+The SDK supports multiple languages for user-facing messages:
+
+```kotlin
+// Set language before authentication
+VeryOauthSDK.getInstance().setLanguage(Language.CHINESE)
+
+// Or set it globally
+LanguageManager.setLanguage(Language.JAPANESE)
+
+// Get current language
+val currentLanguage = VeryOauthSDK.getInstance().getCurrentLanguage()
+
+// Example with different languages
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Set language based on user preference
+        val userLanguage = getUserPreferredLanguage()
+        VeryOauthSDK.getInstance().setLanguage(userLanguage)
+
+        startAuthentication()
+    }
+
+    private fun getUserPreferredLanguage(): Language {
+        // Get from SharedPreferences, system locale, etc.
+        return when (Locale.getDefault().language) {
+            "zh" -> Language.CHINESE
+            "ja" -> Language.JAPANESE
+            "ko" -> Language.KOREAN
+            "es" -> Language.SPANISH
+            "fr" -> Language.FRENCH
+            "de" -> Language.GERMAN
+            "it" -> Language.ITALIAN
+            "pt" -> Language.PORTUGUESE
+            "ru" -> Language.RUSSIAN
+            else -> Language.ENGLISH
+        }
+    }
+}
+```
 
 ### Custom Error Handling
 

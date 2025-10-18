@@ -118,16 +118,16 @@ class OAuthActivity : AppCompatActivity() {
      */
     private fun showCameraPermissionRationale() {
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Camera Permission Required")
-            .setMessage("This app needs camera access for WebView authentication features. Please grant permission to continue.")
-            .setPositiveButton("Grant Permission") { _, _ ->
+            .setTitle(LanguageManager.getCameraPermissionTitle())
+            .setMessage(LanguageManager.getCameraPermissionMessage())
+            .setPositiveButton(LanguageManager.getGrantPermissionButton()) { _, _ ->
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(android.Manifest.permission.CAMERA),
                     CAMERA_PERMISSION_REQUEST_CODE
                 )
             }
-            .setNegativeButton("Continue Without") { _, _ ->
+            .setNegativeButton(LanguageManager.getContinueWithoutButton()) { _, _ ->
                 pendingAuthUrl?.let { startWebView(it) }
             }
             .show()
@@ -138,9 +138,9 @@ class OAuthActivity : AppCompatActivity() {
      */
     private fun showCameraPermissionDeniedMessage() {
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Camera Permission Denied")
-            .setMessage("Camera permission was denied. Some WebView features may not work properly, but authentication will continue.")
-            .setPositiveButton("OK") { _, _ ->
+            .setTitle(LanguageManager.getCameraPermissionDeniedTitle())
+            .setMessage(LanguageManager.getCameraPermissionDeniedMessage())
+            .setPositiveButton(LanguageManager.getOkButton()) { _, _ ->
                 // Continue with authentication
             }
             .show()

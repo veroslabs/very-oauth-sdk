@@ -18,14 +18,16 @@ import AVFoundation
     @objc public let scope: String?
     @objc public let authenticationMode: AuthenticationMode
     @objc public let userId: String?
+    @objc public let language: String?
     
-    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String, scope: String? = "openid", authenticationMode: AuthenticationMode = .systemBrowser, userId: String? = nil) {
+    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String, scope: String? = "openid", authenticationMode: AuthenticationMode = .systemBrowser, userId: String? = nil, language: String? = nil) {
         self.clientId = clientId
         self.redirectUri = redirectUri
         self.authorizationUrl = authorizationUrl
         self.scope = scope
         self.authenticationMode = authenticationMode
         self.userId = userId
+        self.language = language
     }
 }
 
@@ -106,7 +108,7 @@ public class VeryOauthSDK: NSObject {
     ///   - config: OAuth configuration
     ///   - presentingViewController: The view controller to present the authentication from
     ///   - callback: Completion handler with OAuth result
-    public func authenticate(
+    @objc public func authenticate(
         config: OAuthConfig,
         presentingViewController: UIViewController,
         callback: @escaping (OAuthResult) -> Void
@@ -346,6 +348,13 @@ public class VeryOauthSDK: NSObject {
         queryItems.append(URLQueryItem(name: "client_id", value: config.clientId))
         queryItems.append(URLQueryItem(name: "redirect_uri", value: config.redirectUri))
         queryItems.append(URLQueryItem(name: "response_type", value: "code"))
+        if let language = config.language {
+            queryItems.append(URLQueryItem(name: "lang", value: language))
+        }
+           if let language = config.userId {
+            queryItems.append(URLQueryItem(name: "user_id", value: userId))
+        }
+        
         
         // Add optional scope
         if let scope = config.scope {
