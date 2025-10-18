@@ -4,7 +4,7 @@
 
 ### 主要文件
 - [x] `veryoauthsdk-release.aar` (75KB) - 主要Android库文件
-- [x] `pom-default.xml` (1.2KB) - Maven元数据文件
+- [x] `veryoauthsdk-1.0.0.pom` (1.2KB) - Maven元数据文件（.pom扩展名）
 
 ### 附加文件
 - [x] `veryoauthsdk-sources.jar` (7.4KB) - 源码文件
@@ -44,7 +44,7 @@ Version: 1.0.0
 
 1. **主要文件**
    - `veryoauthsdk-release.aar`
-   - `pom-default.xml`
+   - `veryoauthsdk-1.0.0.pom` ⭐ (注意：这是.pom文件)
 
 2. **附加文件**
    - `veryoauthsdk-sources.jar`
@@ -60,6 +60,7 @@ Version: 1.0.0
 ### 上传前检查
 - [x] 所有4个文件已准备就绪
 - [x] 文件大小合理（AAR: 75KB, POM: 1.2KB, Sources: 7.4KB, Javadoc: 415KB）
+- [x] POM文件有正确的.pom扩展名
 - [x] 账户有`org.very`组ID的发布权限
 
 ### 上传后验证
@@ -86,4 +87,4 @@ dependencies {
 
 ---
 
-**注意**: 手动上传是发布到Maven Central的有效方式，特别适合解决自动化发布中的认证问题。
+**注意**: 手动上传是发布到Maven Central的有效方式，特别适合解决自动化发布中的认证问题。确保POM文件有正确的.pom扩展名。
