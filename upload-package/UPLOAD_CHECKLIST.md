@@ -1,4 +1,4 @@
-# Maven Central 上传清单
+# Maven Central 手动上传清单
 
 ## 📦 文件清单
 
@@ -58,9 +58,9 @@ Version: 1.0.0
 ## ✅ 验证清单
 
 ### 上传前检查
-- [ ] 所有4个文件已准备就绪
-- [ ] 文件大小合理（AAR: 75KB, POM: 1.2KB, Sources: 7.4KB, Javadoc: 415KB）
-- [ ] 账户有`org.very`组ID的发布权限
+- [x] 所有4个文件已准备就绪
+- [x] 文件大小合理（AAR: 75KB, POM: 1.2KB, Sources: 7.4KB, Javadoc: 415KB）
+- [x] 账户有`org.very`组ID的发布权限
 
 ### 上传后验证
 - [ ] 在Maven Central搜索 `org.very:veryoauthsdk`
