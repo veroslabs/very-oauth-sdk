@@ -127,8 +127,8 @@ local.properties
 *.jsbundle
 
 # CocoaPods
-/ios/Pods/
-/ios/Podfile.lock
+Pods/
+Podfile.lock
 
 # Flutter
 .dart_tool/
