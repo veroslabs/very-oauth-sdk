@@ -81,7 +81,7 @@ dokkaHtml {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId = 'com.veryoauthsdk'
+            groupId = 'org.very'
             artifactId = 'veryoauthsdk'
             version = '1.0.0'
             
@@ -134,8 +134,8 @@ publishing {
     }
 }
 
-// Signing configuration
-signing {
-    required { gradle.taskGraph.hasTask("publish") }
-    sign publishing.publications.release
-}
+// Signing configuration (disabled for now)
+// signing {
+//     required { gradle.taskGraph.hasTask("publish") }
+//     sign publishing.publications.release
+// }

@@ -15,7 +15,7 @@ Add to your `build.gradle` (Module: app):
 
 ```gradle
 dependencies {
-    implementation 'com.veryoauthsdk:veryoauthsdk:1.0.0'
+    implementation 'org.very:veryoauthsdk:1.0.0'
 }
 ```
 
