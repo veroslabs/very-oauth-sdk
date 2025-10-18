@@ -15,7 +15,7 @@ Pod::Spec.new do |spec|
   
   spec.homepage     = "https://github.com/veroslabs/very-oauth-sdk"
   spec.license      = { :type => "MIT" }
-  spec.author       = { "VeryOauthSDK Team" => "support@very.org" }
+  spec.author       = { "VeryOauthSDK Team" => "tongliang@very.org" }
   spec.source       = { 
     :git => "https://github.com/veroslabs/very-oauth-sdk.git", 
     :tag => "#{spec.version}" 
