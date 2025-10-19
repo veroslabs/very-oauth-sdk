@@ -3,7 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'maven-publish'
     id 'signing'
-    id 'org.jetbrains.dokka' version '1.8.20'
+    id 'org.jetbrains.dokka' version '1.9.10'
 }
 
 android {
@@ -77,15 +77,65 @@ dokkaHtml {
     }
 }
 
-// Maven publishing configuration (simplified for now)
-// publishing {
-//     publications {
-//         release(MavenPublication) {
-//             from components.release
-//             
-//             groupId = 'com.verysdk'
-//             artifactId = 'veryoauthsdk'
-//             version = '1.0.0'
-//         }
-//     }
+// Maven publishing configuration
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'org.very'
+            artifactId = 'veryoauthsdk'
+            version = '1.0.0'
+            
+            // Add the AAR artifact
+            artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+            
+            // Add sources and javadoc artifacts
+            artifact sourcesJar
+            artifact javadocJar
+            
+            // POM configuration
+            pom {
+                name = 'VeryOauthSDK'
+                description = 'A comprehensive OAuth 2.0 SDK for Android with multi-language support'
+                url = 'https://github.com/veroslabs/very-oauth-sdk'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'veroslabs'
+                        name = 'Veros Labs Team'
+                        email = 'tongliang@very.org'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/veroslabs/very-oauth-sdk.git'
+                    developerConnection = 'scm:git:ssh://github.com:veroslabs/very-oauth-sdk.git'
+                    url = 'https://github.com/veroslabs/very-oauth-sdk'
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = "sonatype"
+            url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username = project.findProperty("ossrhUsername") ?: System.getenv("OSSRH_USERNAME")
+                password = project.findProperty("ossrhPassword") ?: System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
+}
+
+// Signing configuration (disabled for now)
+// signing {
+//     required { gradle.taskGraph.hasTask("publish") }
+//     sign publishing.publications.release
 // }

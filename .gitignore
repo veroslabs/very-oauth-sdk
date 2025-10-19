@@ -54,6 +54,12 @@ xcuserdata/
 .cxx
 local.properties
 
+# Sensitive credential files
+android/gradle.properties
+android/local.properties
+**/gradle.properties
+**/local.properties
+
 # Android Studio
 .idea/
 *.iml
@@ -127,8 +133,8 @@ local.properties
 *.jsbundle
 
 # CocoaPods
-/ios/Pods/
-/ios/Podfile.lock
+Pods/
+Podfile.lock
 
 # Flutter
 .dart_tool/

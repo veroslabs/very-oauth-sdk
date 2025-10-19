@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import VeryOauthSDK
 
 struct ProviderInfo {
     let name: String

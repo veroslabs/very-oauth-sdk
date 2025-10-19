@@ -81,7 +81,7 @@ jobs:
 
             Or via JitPack:
             ```gradle
-            implementation 'com.github.your-org:very-sdk:1.0.0'
+            implementation 'com.github.veroslabs.very-oauth-sdk:1.0.0'
             ```
           draft: false
           prerelease: false

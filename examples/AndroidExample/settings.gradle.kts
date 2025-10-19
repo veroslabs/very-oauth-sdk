@@ -15,6 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AndroidExample"
 include(":app")
-include(":veryoauthsdk")
-project(":veryoauthsdk").projectDir = file("../../android/veryoauthsdk")
  

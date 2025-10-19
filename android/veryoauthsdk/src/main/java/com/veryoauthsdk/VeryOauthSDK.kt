@@ -66,6 +66,7 @@ class VeryOauthSDK private constructor() {
     
     private var authCallback: ((OAuthResult) -> Unit)? = null
     private var customTabsIntent: CustomTabsIntent? = null
+    private var language: Language = Language.ENGLISH
     
     /**
      * Start OAuth authentication flow
@@ -111,6 +112,21 @@ class VeryOauthSDK private constructor() {
         authCallback?.invoke(OAuthResult.Cancelled)
         authCallback = null
     }
+    
+    /**
+     * Set the language for the SDK
+     * @param language The language to set
+     */
+    fun setLanguage(language: Language) {
+        this.language = language
+        LanguageManager.setLanguage(language)
+    }
+    
+    /**
+     * Get the current language
+     * @return Current language
+     */
+    fun getCurrentLanguage(): Language = language
     
     /**
      * Start Custom Tabs authentication

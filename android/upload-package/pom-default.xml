@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.very</groupId>
+  <artifactId>veryoauthsdk</artifactId>
+  <version>1.0.0</version>
+  <packaging>aar</packaging>
+  <name>VeryOauthSDK</name>
+  <description>A comprehensive OAuth 2.0 SDK for Android with multi-language support</description>
+  <url>https://github.com/veroslabs/very-oauth-sdk</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>veroslabs</id>
+      <name>Veros Labs Team</name>
+      <email>tongliang@very.org</email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/veroslabs/very-oauth-sdk.git</connection>
+    <developerConnection>scm:git:ssh://github.com:veroslabs/very-oauth-sdk.git</developerConnection>
+    <url>https://github.com/veroslabs/very-oauth-sdk</url>
+  </scm>
+</project>

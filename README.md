@@ -92,7 +92,7 @@ allprojects {
 
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.github.your-org:very-sdk:1.0.0'
+    implementation 'com.github.veroslabs.very-oauth-sdk:1.0.0'
 }
 ```
 
