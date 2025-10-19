@@ -48,7 +48,7 @@ import VeryOauthSDK
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl: "https://connect.very.org/oauth/authorize",
     scope: "openid",
     authenticationMode: .systemBrowser, // or .webview
     userId: "optional_user_id"
@@ -104,7 +104,7 @@ import com.verysdk.*
 val config = OAuthConfig(
     clientId = "your_client_id",
     redirectUri = "your_redirect_uri",
-    authorizationUrl = "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl = "https://connect.very.org/oauth/authorize",
     scope = "openid",
     authenticationMode = AuthenticationMode.SYSTEM_BROWSER, // or AuthenticationMode.WEBVIEW
     userId = "optional_user_id"

@@ -127,7 +127,7 @@
     
         
     // Start authentication
-    [sdk authenticate:config
+    [sdk authenticateWithConfig:config
         presentingViewController:self
                        callback:^(OAuthResult * _Nonnull result) {
         dispatch_async(dispatch_get_main_queue(), ^{

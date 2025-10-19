@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         val config = OAuthConfig(
             clientId = "your_client_id",
             redirectUri = "your_redirect_uri",
-            authorizationUrl = "https://your-auth-server.com/oauth/authorize",
+            authorizationUrl = "https://connect.very.org/oauth/authorize",
             scope = "openid",
             authenticationMode = AuthenticationMode.SYSTEM_BROWSER,
             userId = "optional_user_id"
@@ -153,7 +153,7 @@ class MainActivity : AppCompatActivity() {
 val config = OAuthConfig(
     clientId = "your_client_id",
     redirectUri = "your_redirect_uri",
-    authorizationUrl = "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl = "https://connect.very.org/oauth/authorize",
     authenticationMode = AuthenticationMode.SYSTEM_BROWSER  // Uses Custom Tabs
 )
 ```
@@ -171,7 +171,7 @@ val config = OAuthConfig(
 val config = OAuthConfig(
     clientId = "your_client_id",
     redirectUri = "your_redirect_uri",
-    authorizationUrl = "https://your-auth-server.com/oauth/authorize",
+    // authorizationUrl is optional, defaults to "https://connect.very.org/oauth/authorize"
     authenticationMode = AuthenticationMode.WEBVIEW  // Uses WebView
 )
 ```
@@ -230,7 +230,7 @@ Configuration class for OAuth authentication.
 class OAuthConfig @JvmOverloads constructor(
     val clientId: String,
     val redirectUri: String,
-    val authorizationUrl: String,
+    val authorizationUrl: String = "https://connect.very.org/oauth/authorize",
     val scope: String? = null,
     val authenticationMode: AuthenticationMode = AuthenticationMode.SYSTEM_BROWSER,
     val userId: String? = null
@@ -405,7 +405,7 @@ The SDK is fully compatible with Java projects:
 OAuthConfig config = new OAuthConfig(
     "your_client_id",
     "your_redirect_uri",
-    "https://your-auth-server.com/oauth/authorize",
+    "https://connect.very.org/oauth/authorize",
     "openid",
     AuthenticationMode.SYSTEM_BROWSER,
     "optional_user_id"
@@ -435,7 +435,7 @@ fun AuthenticationScreen() {
             val config = OAuthConfig(
                 clientId = "your_client_id",
                 redirectUri = "your_redirect_uri",
-                authorizationUrl = "https://your-auth-server.com/oauth/authorize"
+                authorizationUrl = "https://connect.very.org/oauth/authorize"
             )
 
             VeryOauthSDK.getInstance().authenticate(

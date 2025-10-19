@@ -11,6 +11,7 @@ import AVFoundation
 }
 
 // MARK: - OAuth Configuration
+@objcMembers
 @objc public class OAuthConfig: NSObject {
     @objc public let clientId: String
     @objc public let redirectUri: String
@@ -20,10 +21,10 @@ import AVFoundation
     @objc public let userId: String?
     @objc public let language: String?
     
-    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String, scope: String? = "openid", authenticationMode: AuthenticationMode = .systemBrowser, userId: String? = nil, language: String? = nil) {
+    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", authenticationMode: AuthenticationMode = .systemBrowser, userId: String? = nil, language: String? = nil) {
         self.clientId = clientId
         self.redirectUri = redirectUri
-        self.authorizationUrl = authorizationUrl
+        self.authorizationUrl = authorizationUrl ?? "https://connect.very.org/oauth/authorize"
         self.scope = scope
         self.authenticationMode = authenticationMode
         self.userId = userId
@@ -32,6 +33,7 @@ import AVFoundation
 }
 
 // MARK: - OAuth Result
+@objcMembers
 @objc public class OAuthResult: NSObject {
     @objc public class Success: OAuthResult {
         @objc public let token: String
@@ -81,6 +83,7 @@ public enum OAuthError: Error, LocalizedError {
 
 // MARK: - VeryOauthSDK Main Class
 @available(iOS 12.0, *)
+@objcMembers
 public class VeryOauthSDK: NSObject {
     
     // MARK: - Properties

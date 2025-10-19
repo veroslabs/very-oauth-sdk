@@ -81,7 +81,7 @@ class ViewController: UIViewController {
         let config = OAuthConfig(
             clientId: "your_client_id",
             redirectUri: "your_redirect_uri",
-            authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+            authorizationUrl: "https://connect.very.org/oauth/authorize",
             scope: "openid",
             authenticationMode: .systemBrowser,
             userId: "optional_user_id"
@@ -125,7 +125,7 @@ class ViewController: UIViewController {
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .systemBrowser  // Uses ASWebAuthenticationSession
 )
 ```
@@ -143,7 +143,7 @@ let config = OAuthConfig(
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .webview  // Uses WKWebView
 )
 ```
@@ -308,7 +308,7 @@ The SDK is fully compatible with Objective-C projects:
 OAuthConfig *config = [[OAuthConfig alloc]
     initWithClientId:@"your_client_id"
     redirectUri:@"your_redirect_uri"
-    authorizationUrl:@"https://your-auth-server.com/oauth/authorize"
+    authorizationUrl:@"https://connect.very.org/oauth/authorize"
     scope:@"openid"
     authenticationMode:AuthenticationModeSystemBrowser
     userId:@"optional_user_id"];

@@ -43,7 +43,7 @@ Update the OAuth configuration in `ContentView.swift`:
 let config = OAuthConfig(
     clientId: "your_client_id",                    // Replace with your client ID
     redirectUri: "your_redirect_uri",              // Replace with your redirect URI
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize", // Replace with your auth URL
+    authorizationUrl: "https://connect.very.org/oauth/authorize", // Replace with your auth URL
     scope: "openid",
     authenticationMode: selectedProvider == "AuthenticationSession" ? .systemBrowser : .webview,
     userId: "optional_user_id"                     // Replace with your user ID
@@ -133,7 +133,7 @@ struct ContentView: View {
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .systemBrowser  // Uses ASWebAuthenticationSession
 )
 ```
@@ -144,7 +144,7 @@ let config = OAuthConfig(
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://your-auth-server.com/oauth/authorize",
+    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .webview  // Uses WKWebView
 )
 ```

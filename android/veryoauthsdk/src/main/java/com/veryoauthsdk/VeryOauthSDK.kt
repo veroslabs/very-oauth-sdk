@@ -22,7 +22,7 @@ enum class AuthenticationMode {
 class OAuthConfig @JvmOverloads constructor(
     val clientId: String,
     val redirectUri: String,
-    val authorizationUrl: String,
+    val authorizationUrl: String = "https://connect.very.org/oauth/authorize",
     val scope: String? = null,
     val authenticationMode: AuthenticationMode = AuthenticationMode.SYSTEM_BROWSER,
     val userId: String? = null
