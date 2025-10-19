@@ -2,8 +2,8 @@
 
 [![Android](https://img.shields.io/badge/Android-24+-green.svg)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.8+-purple.svg)](https://kotlinlang.org/)
-[![Maven Central](https://img.shields.io/badge/Maven%20Central-1.0.1-blue.svg)](https://search.maven.org/)
-[![JitPack](https://img.shields.io/badge/JitPack-1.0.1-orange.svg)](https://jitpack.io/)
+[![Maven Central](https://img.shields.io/badge/Maven%20Central-1.0.2-blue.svg)](https://search.maven.org/)
+[![JitPack](https://img.shields.io/badge/JitPack-1.0.2-orange.svg)](https://jitpack.io/)
 
 A modern OAuth authentication SDK for Android applications with support for both Custom Tabs and WebView authentication.
 
@@ -15,7 +15,7 @@ Add to your `build.gradle` (Module: app):
 
 ```gradle
 dependencies {
-    implementation 'org.very:veryoauthsdk:1.0.1'
+       implementation 'org.very:veryoauthsdk:1.0.2'
 }
 ```
 
@@ -37,7 +37,7 @@ Add to your `build.gradle` (Module: app):
 
 ```gradle
 dependencies {
-    implementation 'com.github.veroslabs.very-oauth-sdk:1.0.1'
+       implementation 'com.github.veroslabs.very-oauth-sdk:1.0.2'
 }
 ```
 

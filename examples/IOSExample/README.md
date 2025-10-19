@@ -133,7 +133,6 @@ struct ContentView: View {
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .systemBrowser  // Uses ASWebAuthenticationSession
 )
 ```
@@ -144,7 +143,6 @@ let config = OAuthConfig(
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .webview  // Uses WKWebView
 )
 ```

@@ -81,8 +81,7 @@ class ViewController: UIViewController {
         let config = OAuthConfig(
             clientId: "your_client_id",
             redirectUri: "your_redirect_uri",
-            authorizationUrl: "https://connect.very.org/oauth/authorize",
-            scope: "openid",
+                    scope: "openid",
             authenticationMode: .systemBrowser,
             userId: "optional_user_id"
         )
@@ -125,7 +124,6 @@ class ViewController: UIViewController {
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .systemBrowser  // Uses ASWebAuthenticationSession
 )
 ```
@@ -143,7 +141,6 @@ let config = OAuthConfig(
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://connect.very.org/oauth/authorize",
     authenticationMode: .webview  // Uses WKWebView
 )
 ```

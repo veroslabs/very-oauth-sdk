@@ -149,7 +149,6 @@ fun OAuthDemoScreen(
                     val config = OAuthConfig(
                         clientId = "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
                         redirectUri = "https://veros-web-oauth-demo.vercel.app/callback",
-                        authorizationUrl = "https://connect.very.org/oauth/authorize",
                         scope = "openid",
                         authenticationMode = if (selectedProvider == "CustomTabs") 
                             AuthenticationMode.SYSTEM_BROWSER 

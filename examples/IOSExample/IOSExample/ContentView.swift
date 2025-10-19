@@ -135,8 +135,7 @@ struct ContentView: View {
         let config = OAuthConfig(
             clientId: "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
             redirectUri: "https://veros-web-oauth-demo.vercel.app/callback",
-            authorizationUrl: "https://connect.very.org/oauth/authorize",
-            scope: "openid",
+                    scope: "openid",
             authenticationMode: selectedProvider == "AuthenticationSession" ? .systemBrowser : .webview,
             userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
         )

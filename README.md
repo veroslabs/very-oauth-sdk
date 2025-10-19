@@ -48,7 +48,6 @@ import VeryOauthSDK
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    authorizationUrl: "https://connect.very.org/oauth/authorize",
     scope: "openid",
     authenticationMode: .systemBrowser, // or .webview
     userId: "optional_user_id"
