@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.very</groupId>
   <artifactId>veryoauthsdk</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <packaging>aar</packaging>
   <name>VeryOauthSDK</name>
   <description>A comprehensive OAuth 2.0 SDK for Android with multi-language support</description>

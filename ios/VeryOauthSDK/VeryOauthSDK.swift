@@ -351,7 +351,7 @@ public class VeryOauthSDK: NSObject {
         if let language = config.language {
             queryItems.append(URLQueryItem(name: "lang", value: language))
         }
-           if let language = config.userId {
+        if let userId = config.userId {
             queryItems.append(URLQueryItem(name: "user_id", value: userId))
         }
         
