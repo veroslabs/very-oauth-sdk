@@ -19,7 +19,7 @@ echo "============================================="
 CENTRAL_API_BASE="https://central.sonatype.com/api/v1"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UPLOAD_DIR="$PROJECT_ROOT/upload-package"
-ZIP_FILE="$UPLOAD_DIR/veryoauthsdk-1.0.0.zip"
+ZIP_FILE="$UPLOAD_DIR/veryoauthsdk-1.0.1.zip"
 
 # Check environment variables
 echo -e "\n${YELLOW}🔍 Checking environment variables...${NC}"
@@ -61,7 +61,7 @@ UPLOAD_RESPONSE=$(curl -s -w "\n%{http_code}" \
     --request POST \
     --header "Authorization: Bearer $AUTH_TOKEN" \
     --form "bundle=@$ZIP_FILE" \
-    --form "name=VeryOauthSDK-1.0.0" \
+    --form "name=VeryOauthSDK-1.0.1" \
     --form "publishingType=AUTOMATIC" \
     "$CENTRAL_API_BASE/publisher/upload")
 

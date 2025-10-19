@@ -80,30 +80,30 @@ echo -e "\n${YELLOW}📦 Step 2: Prepare upload directory...${NC}"
 
 # Clean and create upload directory
 rm -rf "$UPLOAD_DIR"
-mkdir -p "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0"
+mkdir -p "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1"
 
 # Copy files to correct location
 echo "Copying AAR file..."
 cp "$ANDROID_DIR/veryoauthsdk/build/outputs/aar/veryoauthsdk-release.aar" \
-   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0/veryoauthsdk-1.0.0.aar"
+   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1/veryoauthsdk-1.0.1.aar"
 
 echo "Copying POM file..."
 cp "$ANDROID_DIR/veryoauthsdk/build/publications/release/pom-default.xml" \
-   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0/veryoauthsdk-1.0.0.pom"
+   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1/veryoauthsdk-1.0.1.pom"
 
 echo "Copying sources JAR..."
 cp "$ANDROID_DIR/veryoauthsdk/build/libs/veryoauthsdk-sources.jar" \
-   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0/veryoauthsdk-1.0.0-sources.jar"
+   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1/veryoauthsdk-1.0.1-sources.jar"
 
 echo "Copying documentation JAR..."
 cp "$ANDROID_DIR/veryoauthsdk/build/libs/veryoauthsdk-javadoc.jar" \
-   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0/veryoauthsdk-1.0.0-javadoc.jar"
+   "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1/veryoauthsdk-1.0.1-javadoc.jar"
 
 echo -e "${GREEN}✅ File copying completed${NC}"
 
 # Step 3: Generate checksums
 echo -e "\n${YELLOW}🔐 Step 3: Generate checksums...${NC}"
-cd "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.0"
+cd "$UPLOAD_DIR/org/very/veryoauthsdk/1.0.1"
 
 echo "Generating MD5 checksums..."
 for file in *.aar *.jar *.pom; do
@@ -145,11 +145,11 @@ echo -e "\n${YELLOW}📦 Step 5: Create ZIP package...${NC}"
 cd "$UPLOAD_DIR"
 
 echo "Creating ZIP package..."
-rm -f veryoauthsdk-1.0.0.zip
-zip -r veryoauthsdk-1.0.0.zip org/
+rm -f veryoauthsdk-1.0.1.zip
+zip -r veryoauthsdk-1.0.1.zip org/
 
-ZIP_SIZE=$(du -h veryoauthsdk-1.0.0.zip | cut -f1)
-echo -e "${GREEN}✅ ZIP package created: veryoauthsdk-1.0.0.zip ($ZIP_SIZE)${NC}"
+ZIP_SIZE=$(du -h veryoauthsdk-1.0.1.zip | cut -f1)
+echo -e "${GREEN}✅ ZIP package created: veryoauthsdk-1.0.1.zip ($ZIP_SIZE)${NC}"
 
 # Step 6: Display file list
 echo -e "\n${YELLOW}📋 Step 6: File list...${NC}"
@@ -185,5 +185,5 @@ echo "Upload your public key:"
 gpg --armor --export $GPG_KEY_ID
 
 echo -e "\n${GREEN}🎉 Build completed!${NC}"
-echo -e "${GREEN}📦 ZIP file: $UPLOAD_DIR/veryoauthsdk-1.0.0.zip${NC}"
+echo -e "${GREEN}📦 ZIP file: $UPLOAD_DIR/veryoauthsdk-1.0.1.zip${NC}"
 echo -e "${GREEN}📁 Upload directory: $UPLOAD_DIR/org/${NC}"

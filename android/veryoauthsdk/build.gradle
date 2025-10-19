@@ -14,7 +14,7 @@ android {
         minSdk 24
         targetSdk 34
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -81,9 +81,9 @@ dokkaHtml {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId = 'org.very'
-            artifactId = 'veryoauthsdk'
-            version = '1.0.0'
+                groupId = 'org.very'
+                artifactId = 'veryoauthsdk'
+                version = '1.0.1'
             
             // Add the AAR artifact
             artifact("$buildDir/outputs/aar/${project.name}-release.aar")
