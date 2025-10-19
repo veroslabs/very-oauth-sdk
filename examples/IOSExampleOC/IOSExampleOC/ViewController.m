@@ -119,7 +119,8 @@
                                              authorizationUrl:@"https://connect.very.org/oauth/authorize"
                                                        scope:@"openid"
                                            authenticationMode:mode
-                                                      userId:@"vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"];
+                                                      userId:@"vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
+                                                    language:nil];
     
     // Get the SDK instance
     VeryOauthSDK *sdk = [VeryOauthSDK shared];
