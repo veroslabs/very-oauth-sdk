@@ -221,8 +221,9 @@ public class VeryOauthSDK: NSObject {
     }
     
     /// Start WebView Authentication
+        /// Start WebView Authentication (OPTIMIZED - Smart Camera Permission Handling)
     private func startWebViewAuthentication(with authURL: URL, config: OAuthConfig, presentingViewController: UIViewController) {
-        // Check camera permission status first
+        // OPTIMIZED: Check camera permission status but don't block WebView
         let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
         
         switch cameraStatus {
@@ -230,12 +231,21 @@ public class VeryOauthSDK: NSObject {
             // Camera already authorized, proceed directly
             presentWebView(with: authURL, presentingViewController: presentingViewController)
         case .notDetermined:
-            // First time, request permission
-            requestCameraPermission { [weak self] granted in
+            // First time, request permission in background (non-blocking)
+            requestCameraPermissionInBackground { [weak self] granted in
+                // Don't block WebView for camera permission
                 DispatchQueue.main.async {
-                    if granted {
-                        self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
-                    } else {
+                    self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
+                }
+            }
+        case .denied, .restricted:
+            // Permission denied, proceed with WebView anyway (camera is optional)
+            presentWebView(with: authURL, presentingViewController: presentingViewController)
+        @unknown default:
+            // Unknown status, proceed anyway
+            presentWebView(with: authURL, presentingViewController: presentingViewController)
+        }
+    } else {
                         self?.completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
                     }
                 }
@@ -256,6 +266,15 @@ public class VeryOauthSDK: NSObject {
         AVCaptureDevice.requestAccess(for: .video) { granted in
             completion(granted)
         }
+    
+    /// Request camera permission in background (non-blocking)
+    private func requestCameraPermissionInBackground(completion: @escaping (Bool) -> Void) {
+        AVCaptureDevice.requestAccess(for: .video) { granted in
+            // Log permission result for debugging
+            print("📷 Camera permission \(granted ? 'granted' : 'denied')")
+            completion(granted)
+        }
+    }
     }
     
     /// Show camera permission alert
@@ -281,13 +300,25 @@ public class VeryOauthSDK: NSObject {
     }
     
     /// Present WebView with camera support
+        /// Present WebView (OPTIMIZED - Better Camera Permission Handling)
     private func presentWebView(with authURL: URL, presentingViewController: UIViewController) {
-        // Create WebView configuration with camera support
+        // Create WebView configuration with optimized camera support
         let configuration = WKWebViewConfiguration()
         
-        // Enable camera access for WebView
+        // Enable camera access for WebView (only if permission is granted)
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
+        
+        // Add camera permission handling to WebView
+        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            // Camera is authorized, enable full media access
+            configuration.allowsInlineMediaPlayback = true
+            configuration.mediaTypesRequiringUserActionForPlayback = []
+        } else {
+            // Camera not authorized, use basic configuration
+            configuration.allowsInlineMediaPlayback = true
+            configuration.mediaTypesRequiringUserActionForPlayback = [.video, .audio]
+        }
         
         // Create WebView with configuration
         let webView = WKWebView(frame: .zero, configuration: configuration)
@@ -298,22 +329,22 @@ public class VeryOauthSDK: NSObject {
         webViewController.view = webView
         self.webViewController = webViewController
         
-        // Configure WebView navigation delegate
+        // Set up navigation delegate
         webView.navigationDelegate = self
         
-        // Present WebView
+        // Add navigation bar with cancel button
         let navigationController = UINavigationController(rootViewController: webViewController)
-        navigationController.modalPresentationStyle = .pageSheet
+        webViewController.title = "Authentication"
+        webViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .cancel,
+            target: self,
+            action: #selector(cancelWebView)
+        )
         
-        // Add cancel button
-        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelWebViewAuthentication))
-        webViewController.navigationItem.leftBarButtonItem = cancelButton
-        
-        presentingViewController.present(navigationController, animated: true)
-        
-        // Load authorization URL
-        let request = URLRequest(url: authURL)
-        webView.load(request)
+        // Present WebView
+        presentingViewController.present(navigationController, animated: true) {
+            webView.load(URLRequest(url: authURL))
+        }
     }
     
     /// Cancel WebView authentication

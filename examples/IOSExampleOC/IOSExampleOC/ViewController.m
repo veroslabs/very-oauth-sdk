@@ -6,7 +6,7 @@
 //
 
 #import "ViewController.h"
-@import VeryOauthSDK;
+#import <VeryOauthSDK/VeryOauthSDK-Swift.h>
 
 
 @interface ViewController ()
