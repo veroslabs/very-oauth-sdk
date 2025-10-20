@@ -7,7 +7,7 @@ target 'IOSExampleOC' do
 
   # Pods for IOSExampleOC
   # pod 'VeryOauthSDK', :path => '../../ios'
-  pod 'VeryOauthSDK', '1.0.2'
+  pod 'VeryOauthSDK', '~> 1.0.3'
 
   target 'IOSExampleOCTests' do
     inherit! :search_paths

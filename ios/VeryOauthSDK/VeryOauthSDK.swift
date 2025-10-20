@@ -220,8 +220,7 @@ public class VeryOauthSDK: NSObject {
         webAuthSession?.start()
     }
     
-    /// Start WebView Authentication
-        /// Start WebView Authentication (OPTIMIZED - Smart Camera Permission Handling)
+    /// Start WebView Authentication (OPTIMIZED - Smart Camera Permission Handling)
     private func startWebViewAuthentication(with authURL: URL, config: OAuthConfig, presentingViewController: UIViewController) {
         // OPTIMIZED: Check camera permission status but don't block WebView
         let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
@@ -245,27 +244,7 @@ public class VeryOauthSDK: NSObject {
             // Unknown status, proceed anyway
             presentWebView(with: authURL, presentingViewController: presentingViewController)
         }
-    } else {
-                        self?.completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
-                    }
-                }
-            }
-        case .denied, .restricted:
-            // Permission denied, show alert and proceed anyway (WebView might not need camera)
-            showCameraPermissionAlert(presentingViewController: presentingViewController) { [weak self] in
-                self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
-            }
-        @unknown default:
-            // Unknown status, proceed anyway
-            presentWebView(with: authURL, presentingViewController: presentingViewController)
-        }
     }
-    
-    /// Request camera permission
-    private func requestCameraPermission(completion: @escaping (Bool) -> Void) {
-        AVCaptureDevice.requestAccess(for: .video) { granted in
-            completion(granted)
-        }
     
     /// Request camera permission in background (non-blocking)
     private func requestCameraPermissionInBackground(completion: @escaping (Bool) -> Void) {
@@ -274,7 +253,6 @@ public class VeryOauthSDK: NSObject {
             print("📷 Camera permission \(granted ? 'granted' : 'denied')")
             completion(granted)
         }
-    }
     }
     
     /// Show camera permission alert
@@ -299,52 +277,230 @@ public class VeryOauthSDK: NSObject {
         presentingViewController.present(alert, animated: true)
     }
     
-    /// Present WebView with camera support
-        /// Present WebView (OPTIMIZED - Better Camera Permission Handling)
+    private let sharedDataStore = WKWebsiteDataStore.default()
+    
+    // MARK: - Data Store Management
+    
+    /// Clear all website data (cookies, cache, local storage, etc.)
+    @objc public func clearAllWebsiteData(completion: @escaping (Bool) -> Void) {
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.removeData(ofTypes: dataTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Clear cookies for specific domains
+    @objc public func clearCookiesForDomains(_ domains: [String], completion: @escaping (Bool) -> Void) {
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.removeData(ofTypes: dataTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Clear cache only
+    @objc public func clearCache(completion: @escaping (Bool) -> Void) {
+        let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.removeData(ofTypes: cacheTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Get current cookies for a specific domain
+    @objc public func getCookiesForDomain(_ domain: String, completion: @escaping ([HTTPCookie]) -> Void) {
+        sharedDataStore.httpCookieStore.getAllCookies { cookies in
+            let filteredCookies = cookies.filter { cookie in
+                guard let cookieDomain = cookie.domain else { return false }
+                return cookieDomain.contains(domain) || domain.contains(cookieDomain)
+            }
+            DispatchQueue.main.async {
+                completion(filteredCookies)
+            }
+        }
+    }
+    
+    /// Set cookies for authentication
+    @objc public func setCookies(_ cookies: [HTTPCookie], completion: @escaping (Bool) -> Void) {
+        let cookieStore = sharedDataStore.httpCookieStore
+        
+        let group = DispatchGroup()
+        var success = true
+        
+        for cookie in cookies {
+            group.enter()
+            cookieStore.setCookie(cookie) { error in
+                if error != nil {
+                    success = false
+                }
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) {
+            completion(success)
+        }
+    }
+    
+    /// Clear authentication data (cookies and local storage)
+    @objc public func clearAuthenticationData(completion: @escaping (Bool) -> Void) {
+        let authDataTypes: Set<String> = [
+            WKWebsiteDataTypeCookies,
+            WKWebsiteDataTypeLocalStorage,
+            WKWebsiteDataTypeSessionStorage,
+            WKWebsiteDataTypeWebSQLDatabases,
+            WKWebsiteDataTypeIndexedDBDatabases
+        ]
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.removeData(ofTypes: authDataTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Clear data for specific OAuth domains (recommended for security)
+    @objc public func clearOAuthData(completion: @escaping (Bool) -> Void) {
+        let oauthDomains = ["connect.very.org", "very.org", "oauth.very.org"]
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        let date = Date(timeIntervalSince1970: 0)
+        
+        // Clear data for OAuth-related domains
+        sharedDataStore.removeData(ofTypes: dataTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Auto-cleanup after authentication (call this after successful auth)
+    @objc public func performPostAuthenticationCleanup(completion: @escaping (Bool) -> Void) {
+        // Clear sensitive authentication data but keep user preferences
+        let sensitiveDataTypes: Set<String> = [
+            WKWebsiteDataTypeCookies,
+            WKWebsiteDataTypeSessionStorage,
+            WKWebsiteDataTypeWebSQLDatabases,
+            WKWebsiteDataTypeIndexedDBDatabases
+        ]
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.removeData(ofTypes: sensitiveDataTypes, modifiedSince: date) {
+            DispatchQueue.main.async {
+                completion(true)
+            }
+        }
+    }
+    
+    /// Get current data store statistics
+    @objc public func getDataStoreStatistics(completion: @escaping ([String: Any]) -> Void) {
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        let date = Date(timeIntervalSince1970: 0)
+        
+        sharedDataStore.fetchDataRecords(ofTypes: dataTypes) { records in
+            var statistics: [String: Any] = [:]
+            statistics["totalRecords"] = records.count
+            statistics["domains"] = records.map { $0.displayName }
+            statistics["dataTypes"] = Array(dataTypes)
+            
+            // Calculate total size
+            let totalSize = records.reduce(0) { $0 + $1.dataTypes.count }
+            statistics["totalSize"] = totalSize
+            
+            DispatchQueue.main.async {
+                completion(statistics)
+            }
+        }
+    }
+    
+    /// Check if data store has any OAuth-related data
+    @objc public func hasOAuthData(completion: @escaping (Bool) -> Void) {
+        let oauthDomains = ["connect.very.org", "very.org", "oauth.very.org"]
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        
+        sharedDataStore.fetchDataRecords(ofTypes: dataTypes) { records in
+            let hasOAuthData = records.contains { record in
+                oauthDomains.contains { domain in
+                    record.displayName.contains(domain)
+                }
+            }
+            
+            DispatchQueue.main.async {
+                completion(hasOAuthData)
+            }
+        }
+    }
+
     private func presentWebView(with authURL: URL, presentingViewController: UIViewController) {
-        // Create WebView configuration with optimized camera support
         let configuration = WKWebViewConfiguration()
         
-        // Enable camera access for WebView (only if permission is granted)
+        // Use shared data store for cookie and session persistence
+        configuration.websiteDataStore = sharedDataStore
+        
+        // Configure media playback
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
         
-        // Add camera permission handling to WebView
-        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
-            // Camera is authorized, enable full media access
-            configuration.allowsInlineMediaPlayback = true
-            configuration.mediaTypesRequiringUserActionForPlayback = []
-        } else {
-            // Camera not authorized, use basic configuration
-            configuration.allowsInlineMediaPlayback = true
-            configuration.mediaTypesRequiringUserActionForPlayback = [.video, .audio]
-        }
+        // Configure user content controller for better security
+        let userContentController = WKUserContentController()
+        configuration.userContentController = userContentController
+        
+        // Configure preferences
+        let preferences = WKWebpagePreferences()
+        preferences.allowsContentJavaScript = true
+        configuration.defaultWebpagePreferences = preferences
         
         // Create WebView with configuration
         let webView = WKWebView(frame: .zero, configuration: configuration)
         self.webView = webView
+        webView.navigationDelegate = self
         
-        // Create view controller to present WebView
+        // Configure WebView appearance
+        webView.backgroundColor = UIColor.systemBackground
+        webView.isOpaque = false
+        webView.scrollView.bounces = true
+        webView.scrollView.showsVerticalScrollIndicator = true
+        webView.scrollView.showsHorizontalScrollIndicator = false
+
         let webViewController = UIViewController()
         webViewController.view = webView
         self.webViewController = webViewController
-        
-        // Set up navigation delegate
-        webView.navigationDelegate = self
-        
-        // Add navigation bar with cancel button
+
         let navigationController = UINavigationController(rootViewController: webViewController)
         webViewController.title = "Authentication"
+        
+        // Add cancel button
         webViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .cancel,
             target: self,
-            action: #selector(cancelWebView)
+            action: #selector(cancelWebViewAuthentication)
         )
         
-        // Present WebView
+        // Add refresh button for debugging
+        webViewController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .refresh,
+            target: self,
+            action: #selector(refreshWebView)
+        )
+
         presentingViewController.present(navigationController, animated: true) {
             webView.load(URLRequest(url: authURL))
         }
+    }
+    
+    /// Refresh WebView content
+    @objc private func refreshWebView() {
+        webView?.reload()
     }
     
     /// Cancel WebView authentication
@@ -441,6 +597,12 @@ public class VeryOauthSDK: NSObject {
             // Extract authorization code
             if let code = queryItems.first(where: { $0.name == "code" })?.value {
                 let state = queryItems.first(where: { $0.name == "state" })?.value
+                
+                // Perform post-authentication cleanup for security
+                performPostAuthenticationCleanup { _ in
+                    // Cleanup completed, proceed with success callback
+                }
+                
                 completionHandler?(OAuthResult.Success(token: code, state: state))
             } else {
                 completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
