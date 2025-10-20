@@ -199,7 +199,7 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2C4A7AA32E99365500D313AF /* Products */;
 			packageReferences = (
-				2C4A7AD12E99365700D313AF /* XCRemoteSwiftPackageReference "very-oauth-sdk" */,
+				2C4A7AD12E99365700D313AF /* XCLocalSwiftPackageReference "very-oauth-sdk" */,
 			);
 			projectDirPath = "";
 			projectRoot = "";
@@ -596,21 +596,17 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		2C4A7AD12E99365700D313AF /* XCRemoteSwiftPackageReference "very-oauth-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/veroslabs/very-oauth-sdk.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		2C4A7AD12E99365700D313AF /* XCLocalSwiftPackageReference "very-oauth-sdk" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../";
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		2C4A7AD02E99365700D313AF /* VeryOauthSDK */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 2C4A7AD12E99365700D313AF /* XCRemoteSwiftPackageReference "very-oauth-sdk" */;
+			package = 2C4A7AD12E99365700D313AF /* XCLocalSwiftPackageReference "very-oauth-sdk" */;
 			productName = VeryOauthSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
