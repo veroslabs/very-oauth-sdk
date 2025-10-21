@@ -6,22 +6,11 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.8+-purple.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-VeryOauthSDK is a modern OAuth authentication SDK for iOS and Android applications. It provides easy-to-use APIs for OAuth 2.0 authentication with support for multiple authentication methods.
+VeryOauthSDK is an OAuth authentication SDK for iOS and Android applications. It provides easy-to-use APIs for palm biometric based OAuth 2.0 authentication.
 
-## ✨ Features
+This document first presents the integration APIs, followed by a description of a typical authentication workflow that demonstrates their use.
 
-- **🔐 OAuth 2.0 Authentication**: Complete OAuth 2.0 flow implementation
-- **📱 Dual Authentication Modes**:
-  - iOS: ASWebAuthenticationSession / WKWebView
-  - Android: Custom Tabs / WebView
-- **📷 Camera Support**: Camera permission handling for WebView mode
-- **🎨 Modern APIs**: Swift and Kotlin native APIs
-- **📚 Complete Documentation**: API docs and usage examples
-- **🧪 Example Apps**: Full-featured example applications
-- **🌐 Cross-Platform**: Consistent API across iOS and Android
-- **🔒 Security**: Secure authentication with proper error handling
-
-## 🚀 Quick Start
+## Integration APIs
 
 ### iOS Integration
 
@@ -48,9 +37,7 @@ import VeryOauthSDK
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    scope: "openid",
-    authenticationMode: .systemBrowser, // or .webview
-    userId: "optional_user_id"
+    userId: "user_id" // empty string for registration, valid user_id string for verification
 )
 
 VeryOauthSDK.shared.authenticate(
@@ -103,10 +90,7 @@ import com.verysdk.*
 val config = OAuthConfig(
     clientId = "your_client_id",
     redirectUri = "your_redirect_uri",
-    authorizationUrl = "https://connect.very.org/oauth/authorize",
-    scope = "openid",
-    authenticationMode = AuthenticationMode.SYSTEM_BROWSER, // or AuthenticationMode.WEBVIEW
-    userId = "optional_user_id"
+    userId: "user_id" // empty string for registration, valid user_id string for verification
 )
 
 VeryOauthSDK.getInstance().authenticate(
@@ -115,7 +99,7 @@ VeryOauthSDK.getInstance().authenticate(
 ) { result ->
     when (result) {
         is OAuthResult.Success -> {
-            println("Authentication successful: ${result.token}")
+            println("Authentication successful: ${result.code}")
         }
         is OAuthResult.Failure -> {
             println("Authentication failed: ${result.error}")
@@ -127,36 +111,110 @@ VeryOauthSDK.getInstance().authenticate(
 }
 ```
 
-### 📱 Two Authentication Modes
-
-There are two authentication modes: System Browser and WebView. A key difference between them is that the former will display a camera permission dialog every time the SDK attempts to open camera for palm scan while the latter won't. For better user experience, we recommend to use WebView Mode
-
-## 🔧 Configuration
-
 ### OAuthConfig Parameters
 
-| Parameter            | Type               | Required | Description                                                     |
-| -------------------- | ------------------ | -------- | --------------------------------------------------------------- |
-| `clientId`           | String             | ✅       | Your OAuth client ID                                            |
-| `redirectUri`        | String             | ✅       | OAuth redirect URI                                              |
-| `authorizationUrl`   | String             | ✅       | OAuth authorization server URL                                  |
-| `userId`             | String             | ✅       | Enrollment: empty string. Verification: external_user_id string |
-| `scope`              | String             | ❌       | OAuth scope (default: "openid")                                 |
-| `authenticationMode` | AuthenticationMode | ❌       | Authentication method(default: "webview")                       |
+| Parameter     | Type   | Required | Description                                                                               |
+| ------------- | ------ | -------- | ----------------------------------------------------------------------------------------- |
+| `clientId`    | String | ✅       | The OAuth client ID assigned to your application.                                         |
+| `redirectUri` | String | ✅       | The OAuth redirect URI registered for your application.                                   |
+| `userId`      | String | ✅       | For enrollment, use an empty string. For verification, use the `external_user_id` string. |
 
-### Result
+Before integration, please contact **[support@very.org](mailto:support@very.org)** to obtain your `client_id`, `client_secret`, and to register your `redirectUri`.
+The `client_id` and `redirectUri` must be provided to the SDK, while the `client_secret` should be securely configured on your backend OAuth server.
 
-| Response | Type   | Description                                                                           |
-| -------- | ------ | ------------------------------------------------------------------------------------- |
-| `token`  | String | Authorization Token from callback. Will be used to get access_token from OAuth server |
+The `userId` serves as the unique identifier for each user. To register a new user, pass an empty string. Upon successful registration, the SDK returns the newly created `userId` in the authentication result (see below). Store this `userId` in your user database for future verifications.
+To verify an existing user, pass the corresponding `userId` of that user to the SDK.
+
+### Authentication Result
+
+| Response | Type   | Description                                                                                                           |
+| -------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| `code`   | String | The authorization code returned in the callback. Used by the backend to obtain the final token from the OAuth server. |
+| `error`  | String | The error code, if the authentication process fails.                                                                  |
+
+If authentication succeeds, the SDK returns a `code` string to the app. The app must forward this `code` to your backend server, which will then exchange it for the final `id_token` from the Very OAuth endpoint. Details of this process are described in the **Authentication Workflow** section below.
+
+If authentication fails, the SDK returns an `error` string to the app. Possible error types include:
+
+- **`UserCanceled`** – The user canceled the authentication process.
+- **`SystemError: (error.localizedDescription)`** – A system-level error occurred (most commonly a network issue).
+- **`VerificationFailed`** – The palm scan did not match the registered user.
+- **`RegistrationFailed`** – The palm registration was identified as a potential fraud attempt.
 
 ## Authentication Workflow
 
-Step 1. Call VeryOAuthSDK. Pass empty userId for registration.
-Step 2. Use callback token to get access_token from OAuth server
-Step 3. Verify userInfo from the access_token
+### Step 1. Call SDK to Obtain Authorization Code
 
-## 📋 Requirements
+The app configures the `OAuthConfig` parameters and calls the `authenticate` method as described in the **Usage** section above.
+If authentication succeeds, the SDK returns a `code` string. Otherwise, it returns an `error` string.
+
+### Step 2. Exchange Authorization Code for ID Token
+
+The app sends the `code` to your backend server.
+Your backend then exchanges the `code` for tokens by making a **POST** request to the following endpoint:
+
+**Endpoint:**
+`POST https://api.very.org/oauth2/token`
+
+**Content-Type:**
+`application/x-www-form-urlencoded`
+
+**Request Parameters:**
+
+- `grant_type=authorization_code`
+- `client_id` — Your app’s client ID
+- `client_secret` — Your app’s client secret
+- `code` — The authorization code returned from the SDK
+- `redirect_uri` — The same redirect URI used in the initial authorization request
+
+**Example Success Response (200):**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "openid offline_access",
+  "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token_expires_in": 7776000
+}
+```
+
+**Token Details:**
+
+* `access_token` — JWT used for API access (expires in 1 hour).
+* `id_token` — OIDC identity token (JWT) containing the user’s `external_user_id` in the `sub` claim.
+* `refresh_token` — Long-lived token used to obtain new access tokens (returned only if the `offline_access` scope was requested).
+
+---
+
+### Step 3. Verify ID Token
+
+Your backend decodes the JWT `id_token` to verify the user information, especially the `sub` and `external_user_id` fields, which contain the user’s unique identifier.
+
+* For **registration**, store the `external_user_id` of the newly registered user.
+* For **verification**, match the `external_user_id` with the user being verified.
+
+**Example `id_token`:**
+
+```json
+{
+  "iss": "https://connect.very.org",
+  "sub": "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
+  "aud": ["veros_145b3a8f2a8f4dc59394cbbd0dd2a77f"],
+  "exp": 1761013475,
+  "nbf": 1761009875,
+  "iat": 1761009875,
+  "jti": "id_1761009875",
+  "external_user_id": "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
+  "client_id": "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
+  "token_type": "id_token",
+  "scope": "openid"
+}
+```
+
+## Requirements
 
 ### iOS
 
@@ -170,7 +228,7 @@ Step 3. Verify userInfo from the access_token
 - Kotlin 1.8+
 - Android Studio 4.0+
 
-## 🛠️ Setup
+## Setup
 
 ### iOS Setup
 
@@ -202,7 +260,7 @@ import VeryOauthSDK
 import com.verysdk.*
 ```
 
-## 🎯 Example Projects
+## Example Projects
 
 ### iOS Example
 
@@ -215,193 +273,3 @@ import com.verysdk.*
 - **Location**: `examples/AndroidExample/`
 - **Features**: Jetpack Compose UI, dual authentication modes
 - **Run**: `./gradlew assembleDebug`
-
-## 🔒 Security Features
-
-- **Secure Storage**: Credentials stored securely
-- **HTTPS Only**: All network requests use HTTPS
-- **State Validation**: OAuth state parameter validation
-- **Error Handling**: Comprehensive error handling
-- **Permission Management**: Proper camera permission handling
-
-## 📚 API Reference
-
-### iOS API
-
-#### VeryOauthSDK
-
-```swift
-class VeryOauthSDK {
-    static let shared: VeryOauthSDK
-
-    func authenticate(
-        config: OAuthConfig,
-        presentingViewController: UIViewController,
-        callback: @escaping (OAuthResult) -> Void
-    )
-
-    func cancelAuthentication()
-}
-```
-
-#### OAuthConfig
-
-```swift
-class OAuthConfig {
-    let clientId: String
-    let redirectUri: String
-    let authorizationUrl: String
-    let scope: String?
-    let authenticationMode: AuthenticationMode
-    let userId: String?
-}
-```
-
-#### OAuthResult
-
-```swift
-class OAuthResult {
-    class Success: OAuthResult {
-        let token: String
-        let state: String?
-    }
-
-    class Failure: OAuthResult {
-        let error: Error
-    }
-
-    class Cancelled: OAuthResult
-}
-```
-
-### Android API
-
-#### VeryOauthSDK
-
-```kotlin
-class VeryOauthSDK {
-    companion object {
-        fun getInstance(): VeryOauthSDK
-    }
-
-    fun authenticate(
-        context: Context,
-        config: OAuthConfig,
-        callback: (OAuthResult) -> Unit
-    )
-}
-```
-
-#### OAuthConfig
-
-```kotlin
-class OAuthConfig(
-    val clientId: String,
-    val redirectUri: String,
-    val authorizationUrl: String,
-    val scope: String? = null,
-    val authenticationMode: AuthenticationMode = AuthenticationMode.SYSTEM_BROWSER,
-    val userId: String? = null
-)
-```
-
-#### OAuthResult
-
-```kotlin
-sealed class OAuthResult {
-    data class Success(val token: String, val state: String?) : OAuthResult()
-    data class Failure(val error: Throwable) : OAuthResult()
-    object Cancelled : OAuthResult()
-}
-```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### iOS
-
-- **Camera Permission**: Ensure `NSCameraUsageDescription` is added to Info.plist
-- **URL Scheme**: Verify redirect URI matches your app's URL scheme
-- **iOS Version**: Requires iOS 12.0+ for ASWebAuthenticationSession
-
-#### Android
-
-- **Permissions**: Add INTERNET and CAMERA permissions to AndroidManifest.xml
-- **Theme**: Ensure AppCompat theme is used for OAuthActivity
-- **ProGuard**: Add rules to prevent obfuscation of SDK classes
-
-### Error Handling
-
-```swift
-// iOS
-switch result {
-case .failure(let error):
-    if let oauthError = error as? OAuthError {
-        switch oauthError {
-        case .invalidRedirectUri:
-            // Handle invalid redirect URI
-        case .authenticationFailed:
-            // Handle authentication failure
-        case .userCancelled:
-            // Handle user cancellation
-        case .networkError(let error):
-            // Handle network error
-        }
-    }
-}
-```
-
-```kotlin
-// Android
-when (result) {
-    is OAuthResult.Failure -> {
-        when (result.error) {
-            is OAuthError.InvalidRedirectUri -> {
-                // Handle invalid redirect URI
-            }
-            is OAuthError.AuthenticationFailed -> {
-                // Handle authentication failure
-            }
-            is OAuthError.UserCancelled -> {
-                // Handle user cancellation
-            }
-            is OAuthError.NetworkError -> {
-                // Handle network error
-            }
-        }
-    }
-}
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-- **Documentation**: [https://very-sdk-docs.vercel.app](https://very-sdk-docs.vercel.app)
-- **Issues**: [GitHub Issues](https://github.com/veroslabs/very-oauth-sdk/issues)
-- **Email**: support@very.org
-
-## 🔄 Changelog
-
-### Version 1.0.0
-
-- Initial release
-- iOS and Android support
-- Dual authentication modes
-- Camera permission support
-- Complete OAuth 2.0 implementation
-
----
-
-**VeryOauthSDK** - Making OAuth authentication simple and secure across platforms.
