@@ -26,7 +26,7 @@ import com.example.androidexample.ui.theme.AndroidExampleTheme
 import kotlinx.coroutines.launch
 import com.veryoauthsdk.VeryOauthSDK
 import com.veryoauthsdk.OAuthConfig
-import com.veryoauthsdk.AuthenticationMode
+import com.veryoauthsdk.BrowserMode
 import com.veryoauthsdk.OAuthResult
 import com.veryoauthsdk.OAuthErrorType
 
@@ -112,7 +112,6 @@ fun OAuthDemoScreen(
                             } else {
                                 val errorMessage = when (result.error) {
                                     OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
-                                    OAuthErrorType.SYSTEM_ERROR -> "System error occurred"
                                     OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
                                     OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
                                     OAuthErrorType.TIMEOUT -> "Request timeout"

@@ -17,14 +17,14 @@ This document first presents the integration APIs, followed by a description of 
 
 ```ruby
 # Podfile
-pod 'VeryOauthSDK', '~> 1.0.6'
+pod 'VeryOauthSDK', '~> 1.0.8'
 ```
 
 #### Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.6")
+    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.8")
 ]
 ```
 
@@ -58,7 +58,7 @@ VeryOauthSDK().authenticate(
 ```gradle
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.verysdk:veryoauthsdk:1.0.6'
+    implementation 'com.verysdk:veryoauthsdk:1.0.8'
 }
 ```
 
@@ -74,7 +74,7 @@ allprojects {
 
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.github.veroslabs:very-oauth-sdk:1.0.6'
+    implementation 'com.github.veroslabs:very-oauth-sdk:1.0.8'
 }
 ```
 
@@ -98,7 +98,6 @@ VeryOauthSDK.getInstance().authenticate(
         } else {
             val errorMessage = when (result.error) {
                 OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
-                OAuthErrorType.SYSTEM_ERROR -> "System error occurred"
                 OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
                 OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
                 OAuthErrorType.TIMEOUT -> "Request timeout"
@@ -114,11 +113,11 @@ VeryOauthSDK.getInstance().authenticate(
 
 ### OAuthConfig Parameters
 
-| Parameter     | Type   | Required | Description                                                                               |
-| ------------- | ------ | -------- | ----------------------------------------------------------------------------------------- |
-| `clientId`    | String | ✅       | The OAuth client ID assigned to your application.                                         |
-| `redirectUri` | String | ✅       | The OAuth redirect URI registered for your application.                                   |
-| `userId`      | String | ✅       | For enrollment, use an empty string. For verification, use the `external_user_id` string. |
+| Parameter     | Type   | Description                                                                               |
+| ------------- | ------ | ----------------------------------------------------------------------------------------- |
+| `clientId`    | String | The OAuth client ID assigned to your application.                                         |
+| `redirectUri` | String | The OAuth redirect URI registered for your application.                                   |
+| `userId`      | String | For enrollment, use an empty string. For verification, use the `external_user_id` string. |
 
 Before integration, please contact **[support@very.org](mailto:support@very.org)** to obtain your `client_id`, `client_secret`, and to register your `redirectUri`.
 The `client_id` and `redirectUri` must be provided to the SDK, while the `client_secret` should be securely configured on your backend OAuth server.
@@ -139,7 +138,6 @@ If authentication succeeds, the SDK returns a `code` string to the app. The app 
 If authentication fails, the SDK returns an `error` to the app. Possible error types include:
 
 - **`UserCanceled`** – The user canceled the authentication process.
-- **`SystemError`** – A system-level error occurred (most commonly a network issue).
 - **`VerificationFailed`** – The palm scan did not match the registered user.
 - **`RegistrationFailed`** – The palm registration was identified as a potential fraud attempt.
 - **`Timeout`** – The authentication request timed out.
@@ -178,24 +176,21 @@ Your backend then exchanges the `code` for tokens by making a **POST** request t
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "token_type": "Bearer",
   "expires_in": 3600,
-  "scope": "openid offline_access",
-  "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token_expires_in": 7776000
+  "scope": "openid",
+  "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
 **Token Details:**
 
-- `access_token` — JWT used for API access (expires in 1 hour).
+- `access_token` — JWT used for API access (expires in 1 hour). Not used in this sdk authorization workflow.
 - `id_token` — OIDC identity token (JWT) containing the user’s `external_user_id` in the `sub` claim.
-- `refresh_token` — Long-lived token used to obtain new access tokens (returned only if the `offline_access` scope was requested).
 
 ---
 
 ### Step 3. Verify ID Token
 
-Your backend decodes the JWT `id_token` to verify the user information, especially the `sub` and `external_user_id` fields, which contain the user’s unique identifier.
+Your backend decodes the JWT `id_token` to verify the user information, especially the `external_user_id` field, which contains the user’s unique identifier.
 
 - For **registration**, store the `external_user_id` of the newly registered user.
 - For **verification**, match the `external_user_id` with the user being verified.

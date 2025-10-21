@@ -7,5 +7,4 @@ install:
 build:
   - cd android && ./gradlew :veryoauthsdk:build
   - cd android && ./gradlew :veryoauthsdk:publishToMavenLocal
-
 # JitPack will look for the Android library in the android/veryoauthsdk directory

@@ -5,7 +5,7 @@ import UIKit
 import AVFoundation
 
 // MARK: - Authentication Mode
-@objc public enum AuthenticationMode: Int, CaseIterable {
+@objc public enum BrowserMode: Int, CaseIterable {
     case systemBrowser = 0  // Use system browser (ASWebAuthenticationSession) - default
     case webview = 1        // Use in-app browser (WKWebView)
 }
@@ -17,22 +17,22 @@ import AVFoundation
     @objc public let userId: String?
     @objc public let authorizationUrl: String?
     @objc public var scope: String?
-    @objc public var authenticationMode: AuthenticationMode
+    @objc public var browserMode: BrowserMode
     @objc public var language: String?
     
-    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", authenticationMode: AuthenticationMode = .webview, userId: String? = nil, language: String? = nil) {
+    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", browserMode: BrowserMode = .webview, userId: String? = nil, language: String? = nil) {
         self.clientId = clientId
         self.redirectUri = redirectUri
         self.authorizationUrl = authorizationUrl
         self.scope = scope
-        self.authenticationMode = authenticationMode
+        self.browserMode = browserMode
         self.userId = userId
         self.language = language
     }
     
     // MARK: - Convenience Initializer for Minimal Configuration
     @objc public convenience init(clientId: String, redirectUri: String, userId: String) {
-        self.init(clientId: clientId, redirectUri: redirectUri, authorizationUrl: "https://connect.very.org/oauth/authorize", scope: "openid", authenticationMode: .webview, userId: userId, language: nil)
+        self.init(clientId: clientId, redirectUri: redirectUri, authorizationUrl: "https://connect.very.org/oauth/authorize", scope: "openid", browserMode: .webview, userId: userId, language: nil)
     }
 }
 
@@ -40,7 +40,6 @@ import AVFoundation
 @objc public enum OAuthErrorType: Int, CaseIterable {
     case success = 0
     case userCanceled = 1
-    case systemError = 2
     case verificationFailed = 3
     case registrationFailed = 4
     case timeout = 5
@@ -52,7 +51,7 @@ import AVFoundation
     @objc public let code: String
     @objc public let error: OAuthErrorType
     
-    @objc public init(code: String, error: OAuthErrorType = .systemError) {
+    @objc public init(code: String, error: OAuthErrorType = .verificationFailed) {
         self.code = code
         self.error = error
     }
@@ -106,7 +105,7 @@ public class VeryOauthSDK: NSObject {
         // Build authorization URL with validation
         guard let authURL = buildAuthorizationURL(with: config) else {
             DispatchQueue.main.async {
-                callback(OAuthResult(code: "", error: .systemError))
+                callback(OAuthResult(code: "", error: .verificationFailed))
             }
             return
         }
@@ -114,13 +113,13 @@ public class VeryOauthSDK: NSObject {
         // Validate configuration
         guard validateConfig(config) else {
             DispatchQueue.main.async {
-                callback(OAuthResult(code: "", error: .systemError))
+                callback(OAuthResult(code: "", error: .verificationFailed))
             }
             return
         }
         
         // Choose authentication mode
-        switch config.authenticationMode {
+        switch config.browserMode {
         case .systemBrowser:
             if #available(iOS 13.0, *) {
                 startWebAuthenticationSession(with: authURL, config: config)
@@ -283,14 +282,20 @@ public class VeryOauthSDK: NSObject {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         self.webView = webView
         
+        // Set WebView background color
+        webView.backgroundColor = UIColor(red: 0x1C/255.0, green: 0x21/255.0, blue: 0x25/255.0, alpha: 1.0)
+        webView.isOpaque = false
+        
         // Create view controller to present WebView
         let webViewController = UIViewController()
         webViewController.view = webView
+        webViewController.view.backgroundColor = UIColor(red: 0x1C/255.0, green: 0x21/255.0, blue: 0x25/255.0, alpha: 1.0)
         self.webViewController = webViewController
         
         // Configure WebView delegates
         webView.navigationDelegate = self
         webView.uiDelegate = self  // Set UI delegate for media permissions
+
         
         // Present WebView
         let navigationController = UINavigationController(rootViewController: webViewController)
@@ -309,14 +314,7 @@ public class VeryOauthSDK: NSObject {
     
     /// Cancel WebView authentication
     @objc private func cancelWebViewAuthentication() {
-        DispatchQueue.main.async { [weak self] in
-            self?.webViewController?.dismiss(animated: true) {
-                self?.webViewController = nil
-                self?.webView = nil
-                self?.handleError(error: .userCanceled)
-                self?.completionHandler = nil
-            }
-        }
+        handleError(error: .userCanceled)
     }
     
     /// Dismiss WebView if it's currently presented
@@ -325,7 +323,7 @@ public class VeryOauthSDK: NSObject {
             guard let self = self, let webViewController = self.webViewController else { return }
             
             // Only dismiss if it's a WebView authentication (not ASWebAuthenticationSession)
-            if self.currentConfig?.authenticationMode == .webview {
+            if self.currentConfig?.browserMode == .webview {
                 webViewController.dismiss(animated: true) {
                     self.webViewController = nil
                     self.webView = nil

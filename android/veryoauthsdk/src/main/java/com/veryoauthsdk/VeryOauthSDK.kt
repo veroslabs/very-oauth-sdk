@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 /**
  * Authentication mode enum
  */
-enum class AuthenticationMode {
+enum class BrowserMode {
     SYSTEM_BROWSER,    // Use system browser (Custom Tabs) - default
     WEBVIEW            // Use in-app browser (WebView)
 }
@@ -24,7 +24,7 @@ class OAuthConfig @JvmOverloads constructor(
     val redirectUri: String,
     val authorizationUrl: String = "https://connect.very.org/oauth/authorize",
     var scope: String? = "openid",
-    var authenticationMode: AuthenticationMode = AuthenticationMode.WEBVIEW,
+    var browserMode: BrowserMode = BrowserMode.WEBVIEW,
     val userId: String? = null,
     var language: String? = null
 )
@@ -35,7 +35,6 @@ class OAuthConfig @JvmOverloads constructor(
 enum class OAuthErrorType(val value: Int) {
     SUCCESS(0),
     USER_CANCELED(1),
-    SYSTEM_ERROR(2),
     VERIFICATION_FAILED(3),
     REGISTRATION_FAILED(4),
     TIMEOUT(5),
@@ -47,7 +46,7 @@ enum class OAuthErrorType(val value: Int) {
  */
 data class OAuthResult(
     val code: String,
-    val error: OAuthErrorType = OAuthErrorType.SYSTEM_ERROR
+    val error: OAuthErrorType = OAuthErrorType.VERIFICATION_FAILED
 ) {
     val isSuccess: Boolean
         get() = error == OAuthErrorType.SUCCESS
@@ -89,16 +88,16 @@ class VeryOauthSDK private constructor() {
         try {
             val authUrl = buildAuthorizationUrl(config)
             
-            when (config.authenticationMode) {
-                AuthenticationMode.SYSTEM_BROWSER -> {
+            when (config.browserMode) {
+                BrowserMode.SYSTEM_BROWSER -> {
                     startCustomTabsAuthentication(context, authUrl, config)
                 }
-                AuthenticationMode.WEBVIEW -> {
+                BrowserMode.WEBVIEW -> {
                     startWebViewAuthentication(context, authUrl, config)
                 }
             }
         } catch (e: Exception) {
-            callback(OAuthResult("", OAuthErrorType.SYSTEM_ERROR))
+            callback(OAuthResult("", OAuthErrorType.VERIFICATION_FAILED))
         }
     }
     
@@ -139,7 +138,7 @@ class VeryOauthSDK private constructor() {
         val intent = Intent(context, OAuthActivity::class.java).apply {
             putExtra("auth_url", authUrl.toString())
             putExtra("redirect_uri", config.redirectUri)
-            putExtra("auth_mode", AuthenticationMode.SYSTEM_BROWSER.name)
+            putExtra("auth_mode", BrowserMode.SYSTEM_BROWSER.name)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         
@@ -153,7 +152,7 @@ class VeryOauthSDK private constructor() {
         val intent = Intent(context, OAuthActivity::class.java).apply {
             putExtra("auth_url", authUrl.toString())
             putExtra("redirect_uri", config.redirectUri)
-            putExtra("auth_mode", AuthenticationMode.WEBVIEW.name)
+            putExtra("auth_mode", BrowserMode.WEBVIEW.name)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         
