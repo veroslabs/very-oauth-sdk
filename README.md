@@ -127,45 +127,34 @@ VeryOauthSDK.getInstance().authenticate(
 }
 ```
 
-## 📱 Authentication Modes
+### 📱 Two Authentication Modes
 
-### System Browser Mode
-
-- **iOS**: Uses `ASWebAuthenticationSession` for secure system browser authentication
-- **Android**: Uses Chrome Custom Tabs for seamless browser experience
-- **Benefits**:
-  - More secure (uses system browser)
-  - Better user experience
-  - Automatic credential management
-
-### WebView Mode
-
-- **iOS**: Uses `WKWebView` for in-app authentication
-- **Android**: Uses `WebView` for in-app authentication
-- **Benefits**:
-  - Stays within your app
-  - Full control over UI
-  - Camera permission support
+There are two authentication modes: System Browser and WebView. A key difference between them is that the former will display a camera permission dialog every time the SDK attempts to open camera for palm scan while the latter won't. For better user experience, we recommend to use WebView Mode
 
 ## 🔧 Configuration
 
 ### OAuthConfig Parameters
 
-| Parameter            | Type               | Required | Description                     |
-| -------------------- | ------------------ | -------- | ------------------------------- |
-| `clientId`           | String             | ✅       | Your OAuth client ID            |
-| `redirectUri`        | String             | ✅       | OAuth redirect URI              |
-| `authorizationUrl`   | String             | ✅       | OAuth authorization server URL  |
-| `scope`              | String             | ❌       | OAuth scope (default: "openid") |
-| `authenticationMode` | AuthenticationMode | ❌       | Authentication method           |
-| `userId`             | String             | ❌       | Optional user identifier        |
+| Parameter            | Type               | Required | Description                                                     |
+| -------------------- | ------------------ | -------- | --------------------------------------------------------------- |
+| `clientId`           | String             | ✅       | Your OAuth client ID                                            |
+| `redirectUri`        | String             | ✅       | OAuth redirect URI                                              |
+| `authorizationUrl`   | String             | ✅       | OAuth authorization server URL                                  |
+| `userId`             | String             | ✅       | Enrollment: empty string. Verification: external_user_id string |
+| `scope`              | String             | ❌       | OAuth scope (default: "openid")                                 |
+| `authenticationMode` | AuthenticationMode | ❌       | Authentication method(default: "webview")                       |
 
-### AuthenticationMode Options
+### Result
 
-| Platform    | System Browser                      | WebView                      |
-| ----------- | ----------------------------------- | ---------------------------- |
-| **iOS**     | `.systemBrowser`                    | `.webview`                   |
-| **Android** | `AuthenticationMode.SYSTEM_BROWSER` | `AuthenticationMode.WEBVIEW` |
+| Response | Type   | Description                                                                           |
+| -------- | ------ | ------------------------------------------------------------------------------------- |
+| `token`  | String | Authorization Token from callback. Will be used to get access_token from OAuth server |
+
+## Authentication Workflow
+
+Step 1. Call VeryOAuthSDK. Pass empty userId for registration.
+Step 2. Use callback token to get access_token from OAuth server
+Step 3. Verify userInfo from the access_token
 
 ## 📋 Requirements
 
