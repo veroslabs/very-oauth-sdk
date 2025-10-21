@@ -4,7 +4,6 @@
 [![Android](https://img.shields.io/badge/Android-24+-green.svg)](https://developer.android.com/)
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.8+-purple.svg)](https://kotlinlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 VeryOauthSDK is an OAuth authentication SDK for iOS and Android applications. It provides easy-to-use APIs for palm biometric based OAuth 2.0 authentication.
 
@@ -18,14 +17,14 @@ This document first presents the integration APIs, followed by a description of 
 
 ```ruby
 # Podfile
-pod 'VeryOauthSDK', '~> 1.0.0'
+pod 'VeryOauthSDK', '~> 1.0.6'
 ```
 
 #### Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.0")
+    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.6")
 ]
 ```
 
@@ -40,17 +39,14 @@ let config = OAuthConfig(
     userId: "user_id" // empty string for registration, valid user_id string for verification
 )
 
-VeryOauthSDK.shared.authenticate(
+VeryOauthSDK().authenticate(
     config: config,
     presentingViewController: self
 ) { result in
-    switch result {
-    case .success(let token, let state):
-        print("Authentication successful: \(token)")
-    case .failure(let error):
-        print("Authentication failed: \(error)")
-    case .cancelled:
-        print("Authentication cancelled")
+    if result.isSuccess {
+        print("Authentication successful: \(result.code)")
+    } else {
+        print("Authentication failed: \(result.error)")
     }
 }
 ```
@@ -62,7 +58,7 @@ VeryOauthSDK.shared.authenticate(
 ```gradle
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.verysdk:veryoauthsdk:1.0.0'
+    implementation 'com.verysdk:veryoauthsdk:1.0.6'
 }
 ```
 
@@ -78,37 +74,42 @@ allprojects {
 
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.github.veroslabs.very-oauth-sdk:1.0.0'
+    implementation 'com.github.veroslabs.very-oauth-sdk:1.0.6'
 }
 ```
 
 #### Usage
 
 ```kotlin
-import com.verysdk.*
+import com.veryoauthsdk.*
 
 val config = OAuthConfig(
     clientId = "your_client_id",
     redirectUri = "your_redirect_uri",
-    userId: "user_id" // empty string for registration, valid user_id string for verification
+    userId = "user_id" // empty string for registration, valid user_id string for verification
 )
 
 VeryOauthSDK.getInstance().authenticate(
-    context = this,
-    config = config
-) { result ->
-    when (result) {
-        is OAuthResult.Success -> {
+    context = context,
+    config = config,
+    callback = { result ->
+        if (result.isSuccess) {
             println("Authentication successful: ${result.code}")
-        }
-        is OAuthResult.Failure -> {
-            println("Authentication failed: ${result.error}")
-        }
-        is OAuthResult.Cancelled -> {
-            println("Authentication cancelled")
+        } else {
+            val errorMessage = when (result.error) {
+                OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
+                OAuthErrorType.SYSTEM_ERROR -> "System error occurred"
+                OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
+                OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
+                OAuthErrorType.TIMEOUT -> "Request timeout"
+                OAuthErrorType.NETWORK_ERROR -> "Network error"
+                else -> "Unknown error occurred"
+            }
+            println("Authentication failed: $errorMessage")
         }
     }
-}
+)
+
 ```
 
 ### OAuthConfig Parameters
@@ -127,26 +128,29 @@ To verify an existing user, pass the corresponding `userId` of that user to the 
 
 ### Authentication Result
 
-| Response | Type   | Description                                                                                                           |
-| -------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| `code`   | String | The authorization code returned in the callback. Used by the backend to obtain the final token from the OAuth server. |
-| `error`  | String | The error code, if the authentication process fails.                                                                  |
+| Response    | Type   | Description                                                                                                           |
+| ----------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| `isSuccess` | bool   | Indicates whether the authentication was successful.                                                                  |
+| `code`      | String | The authorization code returned in the callback. Used by the backend to obtain the final token from the OAuth server. |
+| `error`     | enum   | The error type, if the authentication process fails.                                                                  |
 
 If authentication succeeds, the SDK returns a `code` string to the app. The app must forward this `code` to your backend server, which will then exchange it for the final `id_token` from the Very OAuth endpoint. Details of this process are described in the **Authentication Workflow** section below.
 
-If authentication fails, the SDK returns an `error` string to the app. Possible error types include:
+If authentication fails, the SDK returns an `error` to the app. Possible error types include:
 
 - **`UserCanceled`** – The user canceled the authentication process.
-- **`SystemError: (error.localizedDescription)`** – A system-level error occurred (most commonly a network issue).
+- **`SystemError`** – A system-level error occurred (most commonly a network issue).
 - **`VerificationFailed`** – The palm scan did not match the registered user.
 - **`RegistrationFailed`** – The palm registration was identified as a potential fraud attempt.
+- **`Timeout`** – The authentication request timed out.
+- **`NetworkError`** – A network connectivity issue occurred.
 
 ## Authentication Workflow
 
 ### Step 1. Call SDK to Obtain Authorization Code
 
 The app configures the `OAuthConfig` parameters and calls the `authenticate` method as described in the **Usage** section above.
-If authentication succeeds, the SDK returns a `code` string. Otherwise, it returns an `error` string.
+If authentication succeeds, the SDK returns a `code` string. Otherwise, it returns an `error`.
 
 ### Step 2. Exchange Authorization Code for ID Token
 
@@ -183,9 +187,9 @@ Your backend then exchanges the `code` for tokens by making a **POST** request t
 
 **Token Details:**
 
-* `access_token` — JWT used for API access (expires in 1 hour).
-* `id_token` — OIDC identity token (JWT) containing the user’s `external_user_id` in the `sub` claim.
-* `refresh_token` — Long-lived token used to obtain new access tokens (returned only if the `offline_access` scope was requested).
+- `access_token` — JWT used for API access (expires in 1 hour).
+- `id_token` — OIDC identity token (JWT) containing the user’s `external_user_id` in the `sub` claim.
+- `refresh_token` — Long-lived token used to obtain new access tokens (returned only if the `offline_access` scope was requested).
 
 ---
 
@@ -193,8 +197,8 @@ Your backend then exchanges the `code` for tokens by making a **POST** request t
 
 Your backend decodes the JWT `id_token` to verify the user information, especially the `sub` and `external_user_id` fields, which contain the user’s unique identifier.
 
-* For **registration**, store the `external_user_id` of the newly registered user.
-* For **verification**, match the `external_user_id` with the user being verified.
+- For **registration**, store the `external_user_id` of the newly registered user.
+- For **verification**, match the `external_user_id` with the user being verified.
 
 **Example `id_token`:**
 
@@ -257,7 +261,7 @@ import VeryOauthSDK
 2. **Import and Use**
 
 ```kotlin
-import com.verysdk.*
+import com.veryoauthsdk.*
 ```
 
 ## Example Projects

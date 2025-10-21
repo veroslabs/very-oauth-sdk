@@ -8,7 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,37 +28,16 @@ import com.veryoauthsdk.VeryOauthSDK
 import com.veryoauthsdk.OAuthConfig
 import com.veryoauthsdk.AuthenticationMode
 import com.veryoauthsdk.OAuthResult
+import com.veryoauthsdk.OAuthErrorType
 
-// Provider information data class
-data class ProviderInfo(
-    val name: String,
-    val title: String,
-    val description: String,
-    val icon: String
-)
 
 class MainActivity : ComponentActivity() {
-    
-    private val providers = listOf(
-        ProviderInfo(
-            name = "CustomTabs",
-            title = "Custom Tabs",
-            description = "Uses Chrome Custom Tabs for secure OAuth",
-            icon = "browser"
-        ),
-        ProviderInfo(
-            name = "WebView",
-            title = "WebView",
-            description = "Uses WebView with camera support",
-            icon = "web"
-        )
-    )
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             AndroidExampleTheme {
-                OAuthDemoScreen(providers = providers, context = this)
+                OAuthDemoScreen(context = this)
             }
         }
     }
@@ -68,10 +46,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OAuthDemoScreen(
-    providers: List<ProviderInfo>,
     context: Context
 ) {
-    var selectedProvider by remember { mutableStateOf("CustomTabs") }
     var authResult by remember { mutableStateOf("Authentication result will appear here") }
     var resultColor by remember { mutableStateOf(Color.Gray) }
     var isLoading by remember { mutableStateOf(false) }
@@ -110,71 +86,41 @@ fun OAuthDemoScreen(
             }
         }
         
-        item {
-            // Provider Selection
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Select Authentication Method:",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    
-                    providers.forEach { provider ->
-                        ProviderCard(
-                            provider = provider,
-                            isSelected = selectedProvider == provider.name,
-                            onSelect = { selectedProvider = provider.name }
-                        )
-                    }
-                }
-            }
-        }
         
         item {
             // Authentication Button
             Button(
                 onClick = {
                     isLoading = true
-                    authResult = "Starting authentication with $selectedProvider..."
+                    authResult = "Starting authentication..."
                     resultColor = Color.Blue
                     
                     // Real VeryOauthSDK authentication - matching iOS example config
                     val config = OAuthConfig(
                         clientId = "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
                         redirectUri = "https://veros-web-oauth-demo.vercel.app/callback",
-                        scope = "openid",
-                        authenticationMode = if (selectedProvider == "CustomTabs") 
-                            AuthenticationMode.SYSTEM_BROWSER 
-                        else 
-                            AuthenticationMode.WEBVIEW,
-                        userId = "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
+                        userId = ""
                     )
                     
                     VeryOauthSDK.getInstance().authenticate(
                         context = context,
                         config = config,
                         callback = { result ->
-                            when (result) {
-                                is OAuthResult.Success -> {
-                                    authResult = "✅ Authentication successful!\n\nToken: ${result.token}\nState: ${result.state ?: "N/A"}"
-                                    resultColor = Color.Green
+                            if (result.isSuccess) {
+                                authResult = "✅ Authentication successful!\n\ncode: ${result.code}"
+                                resultColor = Color.Green
+                            } else {
+                                val errorMessage = when (result.error) {
+                                    OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
+                                    OAuthErrorType.SYSTEM_ERROR -> "System error occurred"
+                                    OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
+                                    OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
+                                    OAuthErrorType.TIMEOUT -> "Request timeout"
+                                    OAuthErrorType.NETWORK_ERROR -> "Network error"
+                                    else -> "Unknown error occurred"
                                 }
-                                is OAuthResult.Failure -> {
-                                    val errorMessage = result.error.message ?: "Unknown error occurred"
-                                    authResult = "❌ Authentication failed: $errorMessage"
-                                    resultColor = Color.Red
-                                }
-                                is OAuthResult.Cancelled -> {
-                                    authResult = "⚠️ Authentication cancelled by user"
-                                    resultColor = Color(0xFFFF9800) // Orange color
-                                }
+                                authResult = "❌ Authentication failed: $errorMessage"
+                                resultColor = Color.Red
                             }
                             isLoading = false
                         }
@@ -233,80 +179,6 @@ fun OAuthDemoScreen(
     }
 }
 
-@Composable
-fun ProviderCard(
-    provider: ProviderInfo,
-    isSelected: Boolean,
-    onSelect: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(
-                selected = isSelected,
-                onClick = onSelect
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 2.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Icon
-            Icon(
-                imageVector = when (provider.icon) {
-                    "browser" -> Icons.Default.Public
-                    "web" -> Icons.Default.Web
-                    else -> Icons.Default.Info
-                },
-                contentDescription = provider.icon,
-                modifier = Modifier.size(24.dp),
-                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary 
-                      else MaterialTheme.colorScheme.primary
-            )
-            
-            // Content
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = provider.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary 
-                           else MaterialTheme.colorScheme.onSurface
-                )
-                
-                Text(
-                    text = provider.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                           else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            // Selection indicator
-            Icon(
-                imageVector = if (isSelected) Icons.Default.RadioButtonChecked 
-                             else Icons.Default.RadioButtonUnchecked,
-                contentDescription = if (isSelected) "Selected" else "Not selected",
-                modifier = Modifier.size(20.dp),
-                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary 
-                      else MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -315,20 +187,6 @@ fun OAuthDemoScreenPreview() {
         // Note: Preview doesn't support real context, so we'll create a mock version
         // In real usage, context will be provided by MainActivity
         OAuthDemoScreen(
-            providers = listOf(
-                ProviderInfo(
-                    name = "CustomTabs",
-                    title = "Custom Tabs",
-                    description = "Uses Chrome Custom Tabs for secure OAuth",
-                    icon = "browser"
-                ),
-                ProviderInfo(
-                    name = "WebView",
-                    title = "WebView",
-                    description = "Uses WebView with camera support",
-                    icon = "web"
-                )
-            ),
             context = androidx.compose.ui.platform.LocalContext.current
         )
     }

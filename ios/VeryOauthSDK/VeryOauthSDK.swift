@@ -14,13 +14,13 @@ import AVFoundation
 @objc public class OAuthConfig: NSObject {
     @objc public let clientId: String
     @objc public let redirectUri: String
-    @objc public let authorizationUrl: String?
-    @objc public let scope: String?
-    @objc public let authenticationMode: AuthenticationMode
     @objc public let userId: String?
-    @objc public let language: String?
+    @objc public let authorizationUrl: String?
+    @objc public var scope: String?
+    @objc public var authenticationMode: AuthenticationMode
+    @objc public var language: String?
     
-    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", authenticationMode: AuthenticationMode = .systemBrowser, userId: String? = nil, language: String? = nil) {
+    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", authenticationMode: AuthenticationMode = .webview, userId: String? = nil, language: String? = nil) {
         self.clientId = clientId
         self.redirectUri = redirectUri
         self.authorizationUrl = authorizationUrl
@@ -29,55 +29,39 @@ import AVFoundation
         self.userId = userId
         self.language = language
     }
+    
+    // MARK: - Convenience Initializer for Minimal Configuration
+    @objc public convenience init(clientId: String, redirectUri: String, userId: String) {
+        self.init(clientId: clientId, redirectUri: redirectUri, authorizationUrl: "https://connect.very.org/oauth/authorize", scope: "openid", authenticationMode: .webview, userId: userId, language: nil)
+    }
+}
+
+// MARK: - OAuth Error Types
+@objc public enum OAuthErrorType: Int, CaseIterable {
+    case success = 0
+    case userCanceled = 1
+    case systemError = 2
+    case verificationFailed = 3
+    case registrationFailed = 4
+    case timeout = 5
+    case networkError = 6
 }
 
 // MARK: - OAuth Result
 @objc public class OAuthResult: NSObject {
-    @objc public class Success: OAuthResult {
-        @objc public let token: String
-        @objc public let state: String?
-        
-        @objc public init(token: String, state: String?) {
-            self.token = token
-            self.state = state
-        }
+    @objc public let code: String
+    @objc public let error: OAuthErrorType
+    
+    @objc public init(code: String, error: OAuthErrorType = .systemError) {
+        self.code = code
+        self.error = error
     }
     
-    @objc public class Failure: OAuthResult {
-        @objc public let error: Error
-        
-        @objc public init(error: Error) {
-            self.error = error
-        }
-    }
-    
-    @objc public class Cancelled: OAuthResult {
-        @objc public override init() {
-            super.init()
-        }
+    @objc public var isSuccess: Bool {
+        return error == .success
     }
 }
 
-// MARK: - OAuth Error
-public enum OAuthError: Error, LocalizedError {
-    case invalidRedirectUri
-    case authenticationFailed
-    case userCancelled
-    case networkError(Error)
-    
-    public var errorDescription: String? {
-        switch self {
-        case .invalidRedirectUri:
-            return "Invalid redirect URI"
-        case .authenticationFailed:
-            return "Authentication failed"
-        case .userCancelled:
-            return "User cancelled authentication"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        }
-    }
-}
 
 // MARK: - VeryOauthSDK Main Class
 @available(iOS 12.0, *)
@@ -122,7 +106,7 @@ public class VeryOauthSDK: NSObject {
         // Build authorization URL with validation
         guard let authURL = buildAuthorizationURL(with: config) else {
             DispatchQueue.main.async {
-                callback(OAuthResult.Failure(error: OAuthError.invalidRedirectUri))
+                callback(OAuthResult(code: "", error: .systemError))
             }
             return
         }
@@ -130,7 +114,7 @@ public class VeryOauthSDK: NSObject {
         // Validate configuration
         guard validateConfig(config) else {
             DispatchQueue.main.async {
-                callback(OAuthResult.Failure(error: OAuthError.invalidRedirectUri))
+                callback(OAuthResult(code: "", error: .systemError))
             }
             return
         }
@@ -205,7 +189,16 @@ public class VeryOauthSDK: NSObject {
             callbackURLScheme: extractScheme(from: config.redirectUri)
         ) { [weak self] callbackURL, error in
             DispatchQueue.main.async {
-                self?.handleAuthenticationResult(callbackURL: callbackURL, error: error)
+                if let error = error {
+                    let nsError = error as NSError
+                    if nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
+                        self?.handleAuthenticationResult(callbackURL: callbackURL, error: .userCanceled)
+                    } else {
+                        self?.handleAuthenticationResult(callbackURL: callbackURL, error: .networkError)
+                    }
+                } else {
+                    self?.handleAuthenticationResult(callbackURL: callbackURL, error: nil)
+                }
             }
         }
         
@@ -233,7 +226,7 @@ public class VeryOauthSDK: NSObject {
                     if granted {
                         self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
                     } else {
-                        self?.completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
+                        self?.handleError(error: .verificationFailed)
                     }
                 }
             }
@@ -320,7 +313,7 @@ public class VeryOauthSDK: NSObject {
             self?.webViewController?.dismiss(animated: true) {
                 self?.webViewController = nil
                 self?.webView = nil
-                self?.completionHandler?(OAuthResult.Cancelled())
+                self?.handleError(error: .userCanceled)
                 self?.completionHandler = nil
             }
         }
@@ -376,22 +369,20 @@ public class VeryOauthSDK: NSObject {
         guard let url = URL(string: redirectUri) else { return nil }
         return url.scheme
     }
+
+    private func handleError(error: OAuthErrorType) {
+        completionHandler?(OAuthResult(code: "", error: error))
+        dismissWebViewIfNeeded()
+    }
     
-    private func handleAuthenticationResult(callbackURL: URL?, error: Error?) {
+    private func handleAuthenticationResult(callbackURL: URL?, error: OAuthErrorType? = nil) {
         if let error = error {
-            let nsError = error as NSError
-            if nsError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
-                completionHandler?(OAuthResult.Cancelled())
-            } else {
-                completionHandler?(OAuthResult.Failure(error: OAuthError.networkError(error)))
-            }
-            dismissWebViewIfNeeded()
+            handleError(error: error)
             return
         }
         
         guard let callbackURL = callbackURL else {
-            completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
-            dismissWebViewIfNeeded()
+            handleError(error: .verificationFailed)
             return
         }
         
@@ -401,20 +392,19 @@ public class VeryOauthSDK: NSObject {
             
             // Check for error in callback
             if queryItems.contains(where: { $0.name == "error" }) {
-                completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
-                dismissWebViewIfNeeded()
+                handleError(error: .verificationFailed)
                 return
             }
             
             // Extract authorization code
             if let code = queryItems.first(where: { $0.name == "code" })?.value {
                 let state = queryItems.first(where: { $0.name == "state" })?.value
-                completionHandler?(OAuthResult.Success(token: code, state: state))
+                completionHandler?(OAuthResult(code: code, error: .success))
             } else {
-                completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
+                handleError(error: .verificationFailed)
             }
         } else {
-            completionHandler?(OAuthResult.Failure(error: OAuthError.authenticationFailed))
+            handleError(error: .verificationFailed)
         }
         
         // Clean up
@@ -503,11 +493,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
                 
                 // Check for error in callback
                 if queryItems.contains(where: { $0.name == "error" }) {
-                    handleAuthenticationResult(callbackURL: nil, error: OAuthError.authenticationFailed)
+                    handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
                 } else if queryItems.contains(where: { $0.name == "code" }) {
                     handleAuthenticationResult(callbackURL: url, error: nil)
                 } else {
-                    handleAuthenticationResult(callbackURL: nil, error: OAuthError.authenticationFailed)
+                    handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
                 }
                 
                 decisionHandler(.cancel)
@@ -517,5 +507,12 @@ extension VeryOauthSDK: WKNavigationDelegate {
         
         decisionHandler(.allow)
     }
+
+
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        print("WebView failed to load: \(error.localizedDescription)")
+        handleAuthenticationResult(callbackURL: nil, error: .networkError)
+    }
     
+   
 }

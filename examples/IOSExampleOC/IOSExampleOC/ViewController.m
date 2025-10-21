@@ -39,29 +39,17 @@
     self.resultLabel = resultLabel;
     [self.view addSubview:resultLabel];
     
-    // Create system browser button
-    UIButton *systemBrowserButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    systemBrowserButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [systemBrowserButton setTitle:@"System Browser Authentication" forState:UIControlStateNormal];
-    [systemBrowserButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    systemBrowserButton.backgroundColor = [UIColor systemBlueColor];
-    systemBrowserButton.layer.cornerRadius = 12;
-    systemBrowserButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [systemBrowserButton addTarget:self action:@selector(systemBrowserButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    self.systemBrowserButton = systemBrowserButton;
-    [self.view addSubview:systemBrowserButton];
-    
-    // Create webview button
-    UIButton *webViewButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    webViewButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [webViewButton setTitle:@"WebView Authentication" forState:UIControlStateNormal];
-    [webViewButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    webViewButton.backgroundColor = [UIColor systemGreenColor];
-    webViewButton.layer.cornerRadius = 12;
-    webViewButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [webViewButton addTarget:self action:@selector(webViewButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    self.webViewButton = webViewButton;
-    [self.view addSubview:webViewButton];
+    // Create authentication button
+    UIButton *authButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    authButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [authButton setTitle:@"Start OAuth Authentication" forState:UIControlStateNormal];
+    [authButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    authButton.backgroundColor = [UIColor systemBlueColor];
+    authButton.layer.cornerRadius = 12;
+    authButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    [authButton addTarget:self action:@selector(authButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    self.authButton = authButton;
+    [self.view addSubview:authButton];
     
     // Create activity indicator
     UIActivityIndicatorView *activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
@@ -78,50 +66,34 @@
         [resultLabel.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
         [resultLabel.heightAnchor constraintGreaterThanOrEqualToConstant:100],
         
-        // System browser button constraints
-        [systemBrowserButton.topAnchor constraintEqualToAnchor:resultLabel.bottomAnchor constant:40],
-        [systemBrowserButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:40],
-        [systemBrowserButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-40],
-        [systemBrowserButton.heightAnchor constraintEqualToConstant:50],
-        
-        // WebView button constraints
-        [webViewButton.topAnchor constraintEqualToAnchor:systemBrowserButton.bottomAnchor constant:20],
-        [webViewButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:40],
-        [webViewButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-40],
-        [webViewButton.heightAnchor constraintEqualToConstant:50],
+        // Authentication button constraints
+        [authButton.topAnchor constraintEqualToAnchor:resultLabel.bottomAnchor constant:40],
+        [authButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:40],
+        [authButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-40],
+        [authButton.heightAnchor constraintEqualToConstant:50],
         
         // Activity indicator constraints
         [activityIndicator.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
-        [activityIndicator.topAnchor constraintEqualToAnchor:webViewButton.bottomAnchor constant:30]
+        [activityIndicator.topAnchor constraintEqualToAnchor:authButton.bottomAnchor constant:30]
     ]];
 }
 
-- (void)systemBrowserButtonTapped:(UIButton *)sender {
-    [self startAuthenticationWithMode:AuthenticationModeSystemBrowser];
+- (void)authButtonTapped:(UIButton *)sender {
+    [self startAuthentication];
 }
 
-- (void)webViewButtonTapped:(UIButton *)sender {
-    [self startAuthenticationWithMode:AuthenticationModeWebview];
-}
-
-- (void)startAuthenticationWithMode:(AuthenticationMode)mode {
+- (void)startAuthentication {
     [self.activityIndicator startAnimating];
-    self.systemBrowserButton.enabled = NO;
-    self.webViewButton.enabled = NO;
+    self.authButton.enabled = NO;
     
-    self.resultLabel.text = [NSString stringWithFormat:@"Starting authentication with %@...", 
-                            mode == AuthenticationModeSystemBrowser ? @"System Browser" : @"WebView"];
+    self.resultLabel.text = @"Starting authentication...";
     self.resultLabel.textColor = [UIColor systemBlueColor];
     
-    // Create OAuth configuration
+    // Create OAuth configuration with minimal required parameters
     OAuthConfig *config = [[OAuthConfig alloc] initWithClientId:@"veros_145b3a8f2a8f4dc59394cbbd0dd2a77f"
                                                    redirectUri:@"https://veros-web-oauth-demo.vercel.app/callback"
-                                             authorizationUrl:@"https://connect.very.org/oauth/authorize"
-                                                       scope:@"openid"
-                                           authenticationMode:mode
-                                                      userId:@"vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
-                                                    language:nil];
-    
+                                                      userId:@"vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"];
+                       
     // Get the SDK instance
     VeryOauthSDK *sdk = [VeryOauthSDK shared];
     
@@ -138,8 +110,7 @@
 
 - (void)handleAuthenticationResult:(OAuthResult *)result {
     [self.activityIndicator stopAnimating];
-    self.systemBrowserButton.enabled = YES;
-    self.webViewButton.enabled = YES;
+    self.authButton.enabled = YES;
     
     if ([result isKindOfClass:[Success class]]) {
         Success *success = (Success *)result;

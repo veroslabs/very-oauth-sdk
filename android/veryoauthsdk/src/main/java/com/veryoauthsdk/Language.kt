@@ -1,54 +1,38 @@
 package com.veryoauthsdk
 
 /**
- * Language configuration for VeryOauthSDK
- */
-enum class Language {
-    ENGLISH,    // English (default)
-    CHINESE,    // Chinese (Simplified)
-    JAPANESE,   // Japanese
-    KOREAN,     // Korean
-    SPANISH,    // Spanish
-    FRENCH,     // French
-    GERMAN,     // German
-    ITALIAN,    // Italian
-    PORTUGUESE, // Portuguese
-    RUSSIAN     // Russian
-}
-
-/**
  * Language manager for handling localized strings
  */
 object LanguageManager {
     
-    private var currentLanguage: Language = Language.ENGLISH
+    private var currentLanguage: String = "en"
     
     /**
      * Set the current language
      */
-    fun setLanguage(language: Language) {
+    fun setLanguage(language: String) {
         currentLanguage = language
     }
     
     /**
      * Get the current language
      */
-    fun getCurrentLanguage(): Language = currentLanguage
+    fun getCurrentLanguage(): String = currentLanguage
     
     /**
      * Get localized string for camera permission title
      */
     fun getCameraPermissionTitle(): String {
         return when (currentLanguage) {
-            Language.CHINESE -> "需要相机权限"
-            Language.JAPANESE -> "カメラの許可が必要です"
-            Language.KOREAN -> "카메라 권한이 필요합니다"
-            Language.SPANISH -> "Se requiere permiso de cámara"
-            Language.FRENCH -> "Permission de caméra requise"
-            Language.GERMAN -> "Kamera-Berechtigung erforderlich"
-            Language.ITALIAN -> "Richiesta autorizzazione fotocamera"
-            Language.PORTUGUESE -> "Permissão de câmera necessária"
-            Language.RUSSIAN -> "Требуется разрешение на камеру"
+            "zh", "zh-CN" -> "需要相机权限"
+            "ja" -> "カメラの許可が必要です"
+            "ko" -> "카메라 권한이 필요합니다"
+            "es" -> "Se requiere permiso de cámara"
+            "fr" -> "Permission de caméra requise"
+            "de" -> "Kamera-Berechtigung erforderlich"
+            "it" -> "Richiesta autorizzazione fotocamera"
+            "pt" -> "Permissão de câmera necessária"
+            "ru" -> "Требуется разрешение на камеру"
             else -> "Camera Permission Required"
         }
     }
@@ -58,52 +42,16 @@ object LanguageManager {
      */
     fun getCameraPermissionMessage(): String {
         return when (currentLanguage) {
-            Language.CHINESE -> "此应用需要相机权限以支持WebView认证功能。请授予权限以继续。"
-            Language.JAPANESE -> "このアプリはWebView認証機能にカメラアクセスが必要です。続行するには許可してください。"
-            Language.KOREAN -> "이 앱은 WebView 인증 기능을 위해 카메라 액세스가 필요합니다. 계속하려면 권한을 부여하세요."
-            Language.SPANISH -> "Esta aplicación necesita acceso a la cámara para las funciones de autenticación WebView. Por favor, otorgue el permiso para continuar."
-            Language.FRENCH -> "Cette application a besoin d'un accès à la caméra pour les fonctionnalités d'authentification WebView. Veuillez accorder l'autorisation pour continuer."
-            Language.GERMAN -> "Diese App benötigt Kamera-Zugriff für WebView-Authentifizierungsfunktionen. Bitte erteilen Sie die Berechtigung, um fortzufahren."
-            Language.ITALIAN -> "Questa app ha bisogno dell'accesso alla fotocamera per le funzionalità di autenticazione WebView. Si prega di concedere l'autorizzazione per continuare."
-            Language.PORTUGUESE -> "Este aplicativo precisa de acesso à câmera para funcionalidades de autenticação WebView. Por favor, conceda a permissão para continuar."
-            Language.RUSSIAN -> "Это приложение требует доступа к камере для функций аутентификации WebView. Пожалуйста, предоставьте разрешение для продолжения."
-            else -> "This app needs camera access for WebView authentication features. Please grant permission to continue."
-        }
-    }
-    
-    /**
-     * Get localized string for camera permission denied title
-     */
-    fun getCameraPermissionDeniedTitle(): String {
-        return when (currentLanguage) {
-            Language.CHINESE -> "相机权限被拒绝"
-            Language.JAPANESE -> "カメラの許可が拒否されました"
-            Language.KOREAN -> "카메라 권한이 거부되었습니다"
-            Language.SPANISH -> "Permiso de cámara denegado"
-            Language.FRENCH -> "Permission de caméra refusée"
-            Language.GERMAN -> "Kamera-Berechtigung verweigert"
-            Language.ITALIAN -> "Autorizzazione fotocamera negata"
-            Language.PORTUGUESE -> "Permissão de câmera negada"
-            Language.RUSSIAN -> "Разрешение на камеру отклонено"
-            else -> "Camera Permission Denied"
-        }
-    }
-    
-    /**
-     * Get localized string for camera permission denied message
-     */
-    fun getCameraPermissionDeniedMessage(): String {
-        return when (currentLanguage) {
-            Language.CHINESE -> "相机权限被拒绝。某些WebView功能可能无法正常工作，但认证将继续进行。"
-            Language.JAPANESE -> "カメラの許可が拒否されました。一部のWebView機能が正常に動作しない可能性がありますが、認証は続行されます。"
-            Language.KOREAN -> "카메라 권한이 거부되었습니다. 일부 WebView 기능이 제대로 작동하지 않을 수 있지만 인증은 계속됩니다."
-            Language.SPANISH -> "El permiso de cámara fue denegado. Algunas funciones de WebView pueden no funcionar correctamente, pero la autenticación continuará."
-            Language.FRENCH -> "La permission de caméra a été refusée. Certaines fonctionnalités WebView peuvent ne pas fonctionner correctement, mais l'authentification continuera."
-            Language.GERMAN -> "Die Kamera-Berechtigung wurde verweigert. Einige WebView-Funktionen funktionieren möglicherweise nicht richtig, aber die Authentifizierung wird fortgesetzt."
-            Language.ITALIAN -> "L'autorizzazione della fotocamera è stata negata. Alcune funzionalità WebView potrebbero non funzionare correttamente, ma l'autenticazione continuerà."
-            Language.PORTUGUESE -> "A permissão da câmera foi negada. Algumas funcionalidades do WebView podem não funcionar corretamente, mas a autenticação continuará."
-            Language.RUSSIAN -> "Разрешение на камеру было отклонено. Некоторые функции WebView могут работать неправильно, но аутентификация будет продолжена."
-            else -> "Camera permission was denied. Some WebView features may not work properly, but authentication will continue."
+            "zh", "zh-CN" -> "此应用需要相机权限来扫描二维码。请在设置中允许相机权限。"
+            "ja" -> "QRコードをスキャンするためにカメラの許可が必要です。設定でカメラの許可を有効にしてください。"
+            "ko" -> "QR 코드를 스캔하기 위해 카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요."
+            "es" -> "Esta aplicación necesita permiso de cámara para escanear códigos QR. Por favor, permite el permiso de cámara en la configuración."
+            "fr" -> "Cette application a besoin de l'autorisation de la caméra pour scanner les codes QR. Veuillez autoriser l'accès à la caméra dans les paramètres."
+            "de" -> "Diese App benötigt die Kamera-Berechtigung zum Scannen von QR-Codes. Bitte erlauben Sie den Kamera-Zugriff in den Einstellungen."
+            "it" -> "Questa app ha bisogno dell'autorizzazione della fotocamera per scansionare i codici QR. Si prega di consentire l'accesso alla fotocamera nelle impostazioni."
+            "pt" -> "Este aplicativo precisa de permissão de câmera para escanear códigos QR. Por favor, permita o acesso à câmera nas configurações."
+            "ru" -> "Это приложение требует разрешение на камеру для сканирования QR-кодов. Пожалуйста, разрешите доступ к камере в настройках."
+            else -> "This app needs camera permission to scan QR codes. Please allow camera access in settings."
         }
     }
     
@@ -112,15 +60,15 @@ object LanguageManager {
      */
     fun getGrantPermissionButton(): String {
         return when (currentLanguage) {
-            Language.CHINESE -> "授予权限"
-            Language.JAPANESE -> "許可を付与"
-            Language.KOREAN -> "권한 부여"
-            Language.SPANISH -> "Otorgar permiso"
-            Language.FRENCH -> "Accorder l'autorisation"
-            Language.GERMAN -> "Berechtigung erteilen"
-            Language.ITALIAN -> "Concedi autorizzazione"
-            Language.PORTUGUESE -> "Conceder permissão"
-            Language.RUSSIAN -> "Предоставить разрешение"
+            "zh", "zh-CN" -> "授予权限"
+            "ja" -> "許可を付与"
+            "ko" -> "권한 부여"
+            "es" -> "Conceder permiso"
+            "fr" -> "Accorder l'autorisation"
+            "de" -> "Berechtigung erteilen"
+            "it" -> "Concedi autorizzazione"
+            "pt" -> "Conceder permissão"
+            "ru" -> "Предоставить разрешение"
             else -> "Grant Permission"
         }
     }
@@ -130,16 +78,52 @@ object LanguageManager {
      */
     fun getContinueWithoutButton(): String {
         return when (currentLanguage) {
-            Language.CHINESE -> "继续无权限"
-            Language.JAPANESE -> "許可なしで続行"
-            Language.KOREAN -> "권한 없이 계속"
-            Language.SPANISH -> "Continuar sin permiso"
-            Language.FRENCH -> "Continuer sans autorisation"
-            Language.GERMAN -> "Ohne Berechtigung fortfahren"
-            Language.ITALIAN -> "Continua senza autorizzazione"
-            Language.PORTUGUESE -> "Continuar sem permissão"
-            Language.RUSSIAN -> "Продолжить без разрешения"
-            else -> "Continue Without"
+            "zh", "zh-CN" -> "继续（无相机）"
+            "ja" -> "続行（カメラなし）"
+            "ko" -> "계속하기（카메라 없이）"
+            "es" -> "Continuar sin cámara"
+            "fr" -> "Continuer sans caméra"
+            "de" -> "Ohne Kamera fortfahren"
+            "it" -> "Continua senza fotocamera"
+            "pt" -> "Continuar sem câmera"
+            "ru" -> "Продолжить без камеры"
+            else -> "Continue Without Camera"
+        }
+    }
+    
+    /**
+     * Get localized string for camera permission denied title
+     */
+    fun getCameraPermissionDeniedTitle(): String {
+        return when (currentLanguage) {
+            "zh", "zh-CN" -> "相机权限被拒绝"
+            "ja" -> "カメラの許可が拒否されました"
+            "ko" -> "카메라 권한이 거부되었습니다"
+            "es" -> "Permiso de cámara denegado"
+            "fr" -> "Autorisation de caméra refusée"
+            "de" -> "Kamera-Berechtigung verweigert"
+            "it" -> "Autorizzazione fotocamera negata"
+            "pt" -> "Permissão de câmera negada"
+            "ru" -> "Разрешение на камеру отклонено"
+            else -> "Camera Permission Denied"
+        }
+    }
+    
+    /**
+     * Get localized string for camera permission denied message
+     */
+    fun getCameraPermissionDeniedMessage(): String {
+        return when (currentLanguage) {
+            "zh", "zh-CN" -> "相机权限被拒绝，但您仍然可以继续使用应用。某些功能（如二维码扫描）可能无法使用。"
+            "ja" -> "カメラの許可が拒否されましたが、アプリの使用を続けることができます。QRコードスキャンなどの一部の機能は使用できない場合があります。"
+            "ko" -> "카메라 권한이 거부되었지만 앱 사용을 계속할 수 있습니다. QR 코드 스캔과 같은 일부 기능은 사용할 수 없을 수 있습니다."
+            "es" -> "El permiso de cámara fue denegado, pero aún puedes continuar usando la aplicación. Algunas funciones como el escaneo de códigos QR pueden no estar disponibles."
+            "fr" -> "L'autorisation de la caméra a été refusée, mais vous pouvez toujours continuer à utiliser l'application. Certaines fonctionnalités comme le scan de codes QR peuvent ne pas être disponibles."
+            "de" -> "Die Kamera-Berechtigung wurde verweigert, aber Sie können die App weiterhin verwenden. Einige Funktionen wie das Scannen von QR-Codes sind möglicherweise nicht verfügbar."
+            "it" -> "L'autorizzazione della fotocamera è stata negata, ma puoi comunque continuare a utilizzare l'app. Alcune funzionalità come la scansione di codici QR potrebbero non essere disponibili."
+            "pt" -> "A permissão da câmera foi negada, mas você ainda pode continuar usando o aplicativo. Algumas funcionalidades como a varredura de códigos QR podem não estar disponíveis."
+            "ru" -> "Разрешение на камеру было отклонено, но вы все еще можете продолжать использовать приложение. Некоторые функции, такие как сканирование QR-кодов, могут быть недоступны."
+            else -> "Camera permission was denied, but you can still continue using the app. Some features like QR code scanning may not be available."
         }
     }
     
@@ -148,15 +132,15 @@ object LanguageManager {
      */
     fun getOkButton(): String {
         return when (currentLanguage) {
-            Language.CHINESE -> "确定"
-            Language.JAPANESE -> "OK"
-            Language.KOREAN -> "확인"
-            Language.SPANISH -> "Aceptar"
-            Language.FRENCH -> "OK"
-            Language.GERMAN -> "OK"
-            Language.ITALIAN -> "OK"
-            Language.PORTUGUESE -> "OK"
-            Language.RUSSIAN -> "ОК"
+            "zh", "zh-CN" -> "确定"
+            "ja" -> "OK"
+            "ko" -> "확인"
+            "es" -> "Aceptar"
+            "fr" -> "OK"
+            "de" -> "OK"
+            "it" -> "OK"
+            "pt" -> "OK"
+            "ru" -> "ОК"
             else -> "OK"
         }
     }

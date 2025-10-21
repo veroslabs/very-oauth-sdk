@@ -64,8 +64,8 @@ dependencies {
     // Material Components for VerySDK compatibility
     implementation("com.google.android.material:material:1.10.0")
     
-    // VeryOauthSDK dependency from Maven Central
-    implementation("org.very:veryoauthsdk:1.0.2")
+    // VeryOauthSDK dependency from local module
+    implementation(project(":veryoauthsdk"))
     
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

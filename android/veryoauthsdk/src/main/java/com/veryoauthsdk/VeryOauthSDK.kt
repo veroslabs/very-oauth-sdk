@@ -23,28 +23,34 @@ class OAuthConfig @JvmOverloads constructor(
     val clientId: String,
     val redirectUri: String,
     val authorizationUrl: String = "https://connect.very.org/oauth/authorize",
-    val scope: String? = null,
-    val authenticationMode: AuthenticationMode = AuthenticationMode.SYSTEM_BROWSER,
-    val userId: String? = null
+    var scope: String? = "openid",
+    var authenticationMode: AuthenticationMode = AuthenticationMode.WEBVIEW,
+    val userId: String? = null,
+    var language: String? = null
 )
 
 /**
- * OAuth result sealed class
+ * OAuth error types enum
  */
-sealed class OAuthResult {
-    data class Success(val token: String, val state: String?) : OAuthResult()
-    data class Failure(val error: Throwable) : OAuthResult()
-    object Cancelled : OAuthResult()
+enum class OAuthErrorType(val value: Int) {
+    SUCCESS(0),
+    USER_CANCELED(1),
+    SYSTEM_ERROR(2),
+    VERIFICATION_FAILED(3),
+    REGISTRATION_FAILED(4),
+    TIMEOUT(5),
+    NETWORK_ERROR(6)
 }
 
 /**
- * OAuth error types
+ * OAuth result class
  */
-sealed class OAuthError : Exception() {
-    object InvalidRedirectUri : OAuthError()
-    object AuthenticationFailed : OAuthError()
-    object UserCancelled : OAuthError()
-    data class NetworkError(val error: Throwable) : OAuthError()
+data class OAuthResult(
+    val code: String,
+    val error: OAuthErrorType = OAuthErrorType.SYSTEM_ERROR
+) {
+    val isSuccess: Boolean
+        get() = error == OAuthErrorType.SUCCESS
 }
 
 /**
@@ -66,7 +72,6 @@ class VeryOauthSDK private constructor() {
     
     private var authCallback: ((OAuthResult) -> Unit)? = null
     private var customTabsIntent: CustomTabsIntent? = null
-    private var language: Language = Language.ENGLISH
     
     /**
      * Start OAuth authentication flow
@@ -93,7 +98,7 @@ class VeryOauthSDK private constructor() {
                 }
             }
         } catch (e: Exception) {
-            callback(OAuthResult.Failure(OAuthError.InvalidRedirectUri))
+            callback(OAuthResult("", OAuthErrorType.SYSTEM_ERROR))
         }
     }
     
@@ -109,7 +114,7 @@ class VeryOauthSDK private constructor() {
      * Cancel current authentication
      */
     fun cancelAuthentication() {
-        authCallback?.invoke(OAuthResult.Cancelled)
+        authCallback?.invoke(OAuthResult("", OAuthErrorType.USER_CANCELED))
         authCallback = null
     }
     
@@ -117,8 +122,7 @@ class VeryOauthSDK private constructor() {
      * Set the language for the SDK
      * @param language The language to set
      */
-    fun setLanguage(language: Language) {
-        this.language = language
+    fun setLanguage(language: String) {
         LanguageManager.setLanguage(language)
     }
     
@@ -126,7 +130,7 @@ class VeryOauthSDK private constructor() {
      * Get the current language
      * @return Current language
      */
-    fun getCurrentLanguage(): Language = language
+    fun getCurrentLanguage(): String = LanguageManager.getCurrentLanguage()
     
     /**
      * Start Custom Tabs authentication
@@ -170,6 +174,7 @@ class VeryOauthSDK private constructor() {
             .apply {
                 config.scope?.let { appendQueryParameter("scope", it) }
                 config.userId?.let { appendQueryParameter("user_id", it) }
+                config.language?.let { appendQueryParameter("lang", it) }
             }
             .build()
     }

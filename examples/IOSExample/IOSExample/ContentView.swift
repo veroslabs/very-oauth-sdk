@@ -8,24 +8,13 @@
 import SwiftUI
 import VeryOauthSDK
 
-struct ProviderInfo {
-    let name: String
-    let title: String
-    let description: String
-    let icon: String
-}
 
 struct ContentView: View {
     @State private var authResult: String = "Authentication result will appear here"
     @State private var resultColor: Color = .gray
     @State private var isLoading: Bool = false
-    @State private var providers = [
-        ProviderInfo(name: "AuthenticationSession", title: "Web Authentication Session", description: "Uses ASWebAuthenticationSession for secure OAuth", icon: "safari"),
-        ProviderInfo(name: "WebView", title: "WebView", description: "Uses WKWebView with camera support", icon: "globe")
-    ]
-    @State private var selectedProvider = "AuthenticationSession"
     
-    private let sdk = VeryOauthSDK()
+
     
     var body: some View {
         ScrollView {
@@ -46,21 +35,6 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 }
                 
-                // Provider Selection
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("Select Authentication Method:")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    ForEach(providers, id: \.name) { provider in
-                        ProviderRow(
-                            provider: provider,
-                            isSelected: selectedProvider == provider.name,
-                            onTap: { selectedProvider = provider.name }
-                        )
-                    }
-                }
-                .padding(.horizontal, 20)
                 
                 // Authentication Button
                 Button(action: startAuthentication) {
@@ -114,7 +88,7 @@ struct ContentView: View {
     
     func startAuthentication() {
         isLoading = true
-        authResult = "Starting authentication with \(selectedProvider)..."
+        authResult = "Starting authentication..."
         resultColor = .blue
         
         
@@ -135,13 +109,10 @@ struct ContentView: View {
         let config = OAuthConfig(
             clientId: "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
             redirectUri: "https://veros-web-oauth-demo.vercel.app/callback",
-            authorizationUrl:"https://connect.very.org/oauth/authorize",
-                    scope: "openid",
-            authenticationMode: selectedProvider == "AuthenticationSession" ? .systemBrowser : .webview,
             userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
         )
         
-        sdk.authenticate(config: config, presentingViewController: rootViewController) { result in
+        VeryOauthSDK().authenticate(config: config, presentingViewController: rootViewController) { result in
             DispatchQueue.main.async {
                 isLoading = false
                 handleAuthenticationResult(result)
@@ -150,73 +121,39 @@ struct ContentView: View {
     }
     
     func handleAuthenticationResult(_ result: OAuthResult) {
-        if let success = result as? OAuthResult.Success {
-            authResult = "✅ Authentication successful!\n\nToken: \(success.token)\nState: \(success.state ?? "N/A")"
+        if result.isSuccess {
+            authResult = "✅ Authentication successful!\n\ncode: \(result.code)"
             resultColor = .green
-        } else if let failure = result as? OAuthResult.Failure {
-            authResult = "❌ Authentication failed:\n\(failure.error.localizedDescription)"
-            resultColor = .red
-        } else if result is OAuthResult.Cancelled {
-            authResult = "⚠️ Authentication cancelled by user"
-            resultColor = .orange
+        } else {
+            let errorMessage: String
+            switch result.error {
+            case .userCanceled:
+                errorMessage = "⚠️ Authentication cancelled by user"
+                resultColor = .orange
+            case .systemError:
+                errorMessage = "❌ System error occurred"
+                resultColor = .red
+            case .verificationFailed:
+                errorMessage = "❌ Verification failed"
+                resultColor = .red
+            case .registrationFailed:
+                errorMessage = "❌ Registration failed"
+                resultColor = .red
+            case .timeout:
+                errorMessage = "❌ Request timeout"
+                resultColor = .red
+            case .networkError:
+                errorMessage = "❌ Network error"
+                resultColor = .red
+            default:
+                errorMessage = "❌ Unknown error"
+                resultColor = .red
+            }
+            authResult = errorMessage
         }
     }
 }
 
-// MARK: - Provider Row Component
-struct ProviderRow: View {
-    let provider: ProviderInfo
-    let isSelected: Bool
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 15) {
-                // Icon
-                Image(systemName: provider.icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .blue)
-                    .frame(width: 24, height: 24)
-                
-                // Content
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(provider.title)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(isSelected ? .white : .primary)
-                    
-                    Text(provider.description)
-                        .font(.system(size: 13))
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                
-                Spacer()
-                
-                // Selection indicator
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.system(size: 18))
-                        .foregroundColor(.gray)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.blue : Color(.systemGray6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
-                    )
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
 #Preview {
     ContentView()

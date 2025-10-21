@@ -55,7 +55,7 @@ class OAuthActivity : AppCompatActivity() {
                 }
             }
         } else {
-            finishWithError(OAuthError.AuthenticationFailed)
+            finishWithError(OAuthErrorType.SYSTEM_ERROR)
         }
     }
     
@@ -251,13 +251,13 @@ class OAuthActivity : AppCompatActivity() {
         
         when {
             error != null -> {
-                finishWithError(OAuthError.AuthenticationFailed)
+                finishWithError(OAuthErrorType.VERIFICATION_FAILED)
             }
             code != null -> {
                 finishWithSuccess(code, state)
             }
             else -> {
-                finishWithError(OAuthError.AuthenticationFailed)
+                finishWithError(OAuthErrorType.VERIFICATION_FAILED)
             }
         }
     }
@@ -265,21 +265,21 @@ class OAuthActivity : AppCompatActivity() {
     /**
      * Finish with success result
      */
-    private fun finishWithSuccess(token: String, state: String?) {
-        veryOauthSDK.handleOAuthResult(OAuthResult.Success(token, state))
+    private fun finishWithSuccess(code: String, state: String?) {
+        veryOauthSDK.handleOAuthResult(OAuthResult(code, OAuthErrorType.SUCCESS))
         finish()
     }
     
     /**
      * Finish with error result
      */
-    private fun finishWithError(error: OAuthError) {
-        veryOauthSDK.handleOAuthResult(OAuthResult.Failure(error))
+    private fun finishWithError(error: OAuthErrorType) {
+        veryOauthSDK.handleOAuthResult(OAuthResult("", error))
         finish()
     }
     
     override fun onBackPressed() {
-        veryOauthSDK.handleOAuthResult(OAuthResult.Cancelled)
+        veryOauthSDK.handleOAuthResult(OAuthResult("", OAuthErrorType.USER_CANCELED))
         super.onBackPressed()
     }
 }
