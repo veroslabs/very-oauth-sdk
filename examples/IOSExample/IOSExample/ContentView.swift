@@ -112,7 +112,8 @@ struct ContentView: View {
             userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
         )
         
-        VeryOauthSDK().authenticate(config: config, presentingViewController: rootViewController) { result in
+        
+        VeryOauthSDK.shared.authenticate(config: config, presentingViewController: rootViewController) { result in
             DispatchQueue.main.async {
                 isLoading = false
                 handleAuthenticationResult(result)
@@ -130,9 +131,6 @@ struct ContentView: View {
             case .userCanceled:
                 errorMessage = "⚠️ Authentication cancelled by user"
                 resultColor = .orange
-            case .systemError:
-                errorMessage = "❌ System error occurred"
-                resultColor = .red
             case .verificationFailed:
                 errorMessage = "❌ Verification failed"
                 resultColor = .red

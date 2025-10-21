@@ -27,7 +27,7 @@ class OAuthActivity : AppCompatActivity() {
     
     private lateinit var veryOauthSDK: VeryOauthSDK
     private var redirectUri: String? = null
-    private var authMode: AuthenticationMode = AuthenticationMode.SYSTEM_BROWSER
+    private var authMode: BrowserMode = BrowserMode.SYSTEM_BROWSER
     private var webView: WebView? = null
     private var pendingAuthUrl: String? = null
     
@@ -41,21 +41,21 @@ class OAuthActivity : AppCompatActivity() {
         
         // Parse authentication mode
         authMode = try {
-            AuthenticationMode.valueOf(authModeString ?: AuthenticationMode.SYSTEM_BROWSER.name)
+            BrowserMode.valueOf(authModeString ?: BrowserMode.SYSTEM_BROWSER.name)
         } catch (e: IllegalArgumentException) {
-            AuthenticationMode.SYSTEM_BROWSER
+            BrowserMode.SYSTEM_BROWSER
         }
         
         if (authUrl != null) {
             when (authMode) {
-                AuthenticationMode.SYSTEM_BROWSER -> startCustomTab(authUrl)
-                AuthenticationMode.WEBVIEW -> {
+                BrowserMode.SYSTEM_BROWSER -> startCustomTab(authUrl)
+                BrowserMode.WEBVIEW -> {
                     pendingAuthUrl = authUrl
                     requestCameraPermissionIfNeeded()
                 }
             }
         } else {
-            finishWithError(OAuthErrorType.SYSTEM_ERROR)
+            finishWithError(OAuthErrorType.VERIFICATION_FAILED)
         }
     }
     
@@ -163,6 +163,9 @@ class OAuthActivity : AppCompatActivity() {
      */
     private fun startWebView(url: String) {
         webView = WebView(this).apply {
+            // Set background color to #1C2125
+            setBackgroundColor(0xFF1C2125.toInt())
+            
             // Basic settings
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -213,20 +216,23 @@ class OAuthActivity : AppCompatActivity() {
             }
         }
         
+        // Set Activity background color to match WebView
+        window.decorView.setBackgroundColor(0xFF1C2125.toInt())
+        
         setContentView(webView)
         webView?.loadUrl(url)
     }
     
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        if (authMode == AuthenticationMode.SYSTEM_BROWSER) {
+        if (authMode == BrowserMode.SYSTEM_BROWSER) {
             handleCallback(intent)
         }
     }
     
     override fun onResume() {
         super.onResume()
-        if (authMode == AuthenticationMode.SYSTEM_BROWSER) {
+        if (authMode == BrowserMode.SYSTEM_BROWSER) {
             handleCallback(intent)
         }
     }
