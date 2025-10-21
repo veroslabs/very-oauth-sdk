@@ -74,7 +74,7 @@ allprojects {
 
 // build.gradle (Module: app)
 dependencies {
-    implementation 'com.github.veroslabs.very-oauth-sdk:1.0.6'
+    implementation 'com.github.veroslabs:very-oauth-sdk:1.0.6'
 }
 ```
 

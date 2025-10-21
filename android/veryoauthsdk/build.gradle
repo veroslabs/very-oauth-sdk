@@ -65,6 +65,7 @@ task sourcesJar(type: Jar) {
 task javadocJar(type: Jar) {
     from dokkaHtml
     archiveClassifier = 'javadoc'
+    dependsOn dokkaHtml
 }
 
 dokkaHtml {
@@ -77,13 +78,13 @@ dokkaHtml {
     }
 }
 
-// Maven publishing configuration
+// Maven publishing configuration for JitPack
 publishing {
     publications {
         release(MavenPublication) {
-                groupId = 'org.very'
-                artifactId = 'veryoauthsdk'
-                version = '1.0.6'
+            groupId = 'com.github.veroslabs'
+            artifactId = 'very-oauth-sdk'
+            version = '1.0.6'
             
             // Add the AAR artifact
             artifact("$buildDir/outputs/aar/${project.name}-release.aar")
@@ -118,17 +119,6 @@ publishing {
                     developerConnection = 'scm:git:ssh://github.com:veroslabs/very-oauth-sdk.git'
                     url = 'https://github.com/veroslabs/very-oauth-sdk'
                 }
-            }
-        }
-    }
-    
-    repositories {
-        maven {
-            name = "sonatype"
-            url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            credentials {
-                username = project.findProperty("ossrhUsername") ?: System.getenv("OSSRH_USERNAME")
-                password = project.findProperty("ossrhPassword") ?: System.getenv("OSSRH_PASSWORD")
             }
         }
     }

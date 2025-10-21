@@ -42,6 +42,9 @@ UPLOAD_DIR="$PROJECT_ROOT/upload-package"
 VERSION=${1:-"1.0.2"}
 ZIP_FILE="$UPLOAD_DIR/veryoauthsdk-$VERSION.zip"
 
+CENTRAL_USERNAME=slPqDf
+CENTRAL_PASSWORD=ehP5DBrVAmZx1lYqHhsg8LVZucB9jKnCy
+
 print_status "Version: $VERSION"
 print_status "ZIP file: $ZIP_FILE"
 
