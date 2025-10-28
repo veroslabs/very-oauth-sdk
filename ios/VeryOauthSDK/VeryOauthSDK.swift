@@ -299,7 +299,7 @@ public class VeryOauthSDK: NSObject {
         
         // Present WebView
         let navigationController = UINavigationController(rootViewController: webViewController)
-        navigationController.modalPresentationStyle = .pageSheet
+        navigationController.modalPresentationStyle = .fullScreen
         
         // Add cancel button
         let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelWebViewAuthentication))

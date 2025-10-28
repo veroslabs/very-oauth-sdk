@@ -1,9 +1,9 @@
 # VeryOauthSDK
 
 [![iOS](https://img.shields.io/badge/iOS-12.0+-blue.svg)](https://developer.apple.com/ios/)
-[![Android](https://img.shields.io/badge/Android-24+-green.svg)](https://developer.android.com/)
+[![Android](https://img.shields.io/badge/Android-23+-green.svg)](https://developer.android.com/)
 [![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.8+-purple.svg)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1+-purple.svg)](https://kotlinlang.org/)
 
 VeryOauthSDK is an OAuth authentication SDK for iOS and Android applications. It provides easy-to-use APIs for palm biometric based OAuth 2.0 authentication.
 
@@ -207,7 +207,7 @@ Your backend decodes the JWT `id_token` to verify the user information, especial
 
 ### Android
 
-- Android API 24+ (Android 7.0)
+- Android API 23+ (Android 7.0)
 - Kotlin 1.8+
 - Android Studio 4.0+
 

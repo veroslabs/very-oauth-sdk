@@ -1,0 +1,36 @@
+# Files to ignore when publishing to pub.dev
+# This file is used to exclude files from the published package
+
+# Build artifacts
+build/
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Documentation that shouldn't be in the package
+docs/
+documentation/
+
+# Test files that aren't needed in the published package
+test/
+tests/
+*_test.dart
+*_test.dart
+
+# Example files
+example/
+examples/

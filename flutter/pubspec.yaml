@@ -1,0 +1,27 @@
+name: very_oauth_sdk
+description: A Flutter plugin for Very OAuth authentication with palm biometric support.
+version: 1.0.9
+homepage: https://github.com/veroslabs/very-oauth-sdk
+repository: https://github.com/veroslabs/very-oauth-sdk
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.veryoauthsdk.flutter
+        pluginClass: VeryOauthSDKPlugin
+      ios:
+        pluginClass: VeryOauthSDKPlugin
