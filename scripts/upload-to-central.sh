@@ -42,8 +42,6 @@ UPLOAD_DIR="$PROJECT_ROOT/upload-package"
 VERSION=${1:-"1.0.2"}
 ZIP_FILE="$UPLOAD_DIR/veryoauthsdk-$VERSION.zip"
 
-CENTRAL_USERNAME=slPqDf
-CENTRAL_PASSWORD=ehP5DBrVAmZx1lYqHhsg8LVZucB9jKnCy
 
 print_status "Version: $VERSION"
 print_status "ZIP file: $ZIP_FILE"
@@ -96,7 +94,7 @@ UPLOAD_RESPONSE=$(curl -s -w "\n%{http_code}" \
 
 # Separate response body and status code
 HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$UPLOAD_RESPONSE" | head -n -1)
+RESPONSE_BODY=$(echo "$UPLOAD_RESPONSE" | sed '$d')
 
 if [ "$HTTP_CODE" -eq 201 ]; then
     DEPLOYMENT_ID="$RESPONSE_BODY"
@@ -125,7 +123,7 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
         "$CENTRAL_API_BASE/publisher/status?id=$DEPLOYMENT_ID")
     
     HTTP_CODE=$(echo "$STATUS_RESPONSE" | tail -n1)
-    STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
+    STATUS_BODY=$(echo "$STATUS_RESPONSE" | sed '$d')
     
     if [ "$HTTP_CODE" -eq 200 ]; then
         # Parse JSON response (requires jq tool)

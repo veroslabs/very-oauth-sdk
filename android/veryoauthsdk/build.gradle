@@ -85,7 +85,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'org.very'
             artifactId = 'veryoauthsdk'
-            version = '1.0.9'
+            version = '1.0.10'
             
             // Add the AAR artifact
             artifact("$buildDir/outputs/aar/${project.name}-release.aar")

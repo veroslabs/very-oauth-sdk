@@ -5,7 +5,7 @@
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.CAMERA" />
 
-  <application android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:supportsRtl="true" android:theme="@style/Theme.VeryOauthSDK" tools:targetApi="31">
+  <application android:allowBackup="false" android:supportsRtl="true" android:theme="@style/Theme.VeryOauthSDK" tools:targetApi="31">
 
     <!-- OAuth Activity -->
     <activity android:name=".OAuthActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/Theme.VeryOauthSDK" />
