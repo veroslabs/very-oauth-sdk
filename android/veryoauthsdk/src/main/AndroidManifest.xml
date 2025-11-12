@@ -7,7 +7,7 @@
   <application android:allowBackup="false">
 
     <!-- OAuth Activity -->
-    <activity android:name=".OAuthActivity" android:exported="true" android:launchMode="singleTop" android:theme="@style/Theme.VeryOauthSDK" />
+    <activity android:name=".OAuthActivity" android:exported="true" android:theme="@style/Theme.VeryOauthSDK" />
 
   </application>
 

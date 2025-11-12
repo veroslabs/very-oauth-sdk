@@ -99,13 +99,15 @@ fun OAuthDemoScreen(
                     val config = OAuthConfig(
                         clientId = "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
                         redirectUri = "https://veros-web-oauth-demo.vercel.app/callback",
-                        userId = ""
+                        userId = "",
+                        themeMode = "light"
                     )
                     
                     VeryOauthSDK.getInstance().authenticate(
                         context = context,
                         config = config,
                         callback = { result ->
+                            println("OAuth Result: $result")
                             if (result.isSuccess) {
                                 authResult = "✅ Authentication successful!\n\ncode: ${result.code}"
                                 resultColor = Color.Green

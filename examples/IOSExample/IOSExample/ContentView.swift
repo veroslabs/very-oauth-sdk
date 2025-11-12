@@ -109,7 +109,8 @@ struct ContentView: View {
         let config = OAuthConfig(
             clientId: "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
             redirectUri: "https://veros-web-oauth-demo.vercel.app/callback",
-            userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
+            userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
+            themeMode: "light"
         )
         
         
@@ -142,6 +143,9 @@ struct ContentView: View {
                 resultColor = .red
             case .networkError:
                 errorMessage = "❌ Network error"
+                resultColor = .red
+            case .cameraPermissionDenied:
+                errorMessage = "❌ Camera Permission Denied"
                 resultColor = .red
             default:
                 errorMessage = "❌ Unknown error"

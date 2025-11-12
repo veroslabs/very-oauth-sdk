@@ -19,8 +19,14 @@ import AVFoundation
     @objc public var scope: String?
     @objc public var browserMode: BrowserMode
     @objc public var language: String?
+    @objc public var themeMode: String
     
-    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", browserMode: BrowserMode = .webview, userId: String? = nil, language: String? = nil) {
+    @objc public init(clientId: String, redirectUri: String, authorizationUrl: String? = "https://connect.very.org/oauth/authorize", scope: String? = "openid", browserMode: BrowserMode = .webview, userId: String? = nil, language: String? = nil, themeMode: String = "dark") {
+        // Validate themeMode
+        guard themeMode == "light" || themeMode == "dark" else {
+            fatalError("themeMode must be either 'light' or 'dark'")
+        }
+        
         self.clientId = clientId
         self.redirectUri = redirectUri
         self.authorizationUrl = authorizationUrl
@@ -28,11 +34,12 @@ import AVFoundation
         self.browserMode = browserMode
         self.userId = userId
         self.language = language
+        self.themeMode = themeMode
     }
     
     // MARK: - Convenience Initializer for Minimal Configuration
     @objc public convenience init(clientId: String, redirectUri: String, userId: String) {
-        self.init(clientId: clientId, redirectUri: redirectUri, authorizationUrl: "https://connect.very.org/oauth/authorize", scope: "openid", browserMode: .webview, userId: userId, language: nil)
+        self.init(clientId: clientId, redirectUri: redirectUri, authorizationUrl: "https://connect.very.org/oauth/authorize", scope: "openid", browserMode: .webview, userId: userId, language: nil, themeMode: "dark")
     }
 }
 
@@ -44,6 +51,7 @@ import AVFoundation
     case registrationFailed = 4
     case timeout = 5
     case networkError = 6
+    case cameraPermissionDenied = 7
 }
 
 // MARK: - OAuth Result
@@ -73,8 +81,16 @@ public class VeryOauthSDK: NSObject {
     private var currentConfig: OAuthConfig?
     private var completionHandler: ((OAuthResult) -> Void)?
     
+    // Network error handling properties
+    private var timeoutTimer: Timer?
+    private var isPageLoaded = false
+    private var isErrorHandled = false
+    
     // Thread-safe properties
     private let queue = DispatchQueue(label: "com.verysdk.queue", attributes: .concurrent)
+    
+    // Constants
+    private let webViewTimeout: TimeInterval = 30.0 // 30 seconds timeout
     
     // MARK: - Public Methods
     
@@ -134,6 +150,7 @@ public class VeryOauthSDK: NSObject {
     
     /// Cancel current authentication session
     public func cancelAuthentication() {
+        cancelTimeout()
         webAuthSession?.cancel()
         webAuthSession = nil
         
@@ -147,11 +164,16 @@ public class VeryOauthSDK: NSObject {
     
     /// Clean up WebView resources
     private func cleanupWebView() {
+        cancelTimeout()
         webView?.navigationDelegate = nil
         webView?.uiDelegate = nil
         webView?.stopLoading()
         webView = nil
         webViewController = nil
+        
+        // Reset error handling state
+        isPageLoaded = false
+        isErrorHandled = false
         
         // Clear completion handler to prevent memory leaks
         queue.async(flags: .barrier) { [weak self] in
@@ -225,18 +247,16 @@ public class VeryOauthSDK: NSObject {
                     if granted {
                         self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
                     } else {
-                        self?.handleError(error: .verificationFailed)
+                        self?.handleError(error: .cameraPermissionDenied)
                     }
                 }
             }
         case .denied, .restricted:
-            // Permission denied, show alert and proceed anyway (WebView might not need camera)
-            showCameraPermissionAlert(presentingViewController: presentingViewController) { [weak self] in
-                self?.presentWebView(with: authURL, presentingViewController: presentingViewController)
-            }
+            // Permission denied, show alert and require camera permission
+            showCameraPermissionAlert(presentingViewController: presentingViewController)
         @unknown default:
-            // Unknown status, proceed anyway
-            presentWebView(with: authURL, presentingViewController: presentingViewController)
+            // Unknown status, require camera permission
+            showCameraPermissionAlert(presentingViewController: presentingViewController)
         }
     }
     
@@ -248,22 +268,23 @@ public class VeryOauthSDK: NSObject {
     }
     
     /// Show camera permission alert
-    private func showCameraPermissionAlert(presentingViewController: UIViewController, completion: @escaping () -> Void) {
+    private func showCameraPermissionAlert(presentingViewController: UIViewController) {
         let alert = UIAlertController(
             title: "Camera Permission",
-            message: "Camera access is optional for OAuth authentication. You can still proceed without it, but some features like QR code scanning may not work.",
+            message: "Camera access is required for OAuth authentication. Please grant camera permission to continue.",
             preferredStyle: .alert
         )
         
-        alert.addAction(UIAlertAction(title: "Continue", style: .default) { _ in
-            completion()
+        alert.addAction(UIAlertAction(title: "Close", style: .default) { [weak self] _ in
+            self?.handleError(error: .cameraPermissionDenied)
         })
         
-        alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "Settings", style: .default) { [weak self] _ in
             if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
                 UIApplication.shared.open(settingsURL)
             }
-            completion()
+            // After opening settings, still return camera permission denied error
+            self?.handleError(error: .cameraPermissionDenied)
         })
         
         presentingViewController.present(alert, animated: true)
@@ -307,9 +328,35 @@ public class VeryOauthSDK: NSObject {
         
         presentingViewController.present(navigationController, animated: true)
         
+        // Reset error handling state
+        isPageLoaded = false
+        isErrorHandled = false
+        
         // Load authorization URL
         let request = URLRequest(url: authURL)
         webView.load(request)
+        
+        // Start timeout timer
+        startTimeout()
+    }
+    
+    /// Start timeout timer
+    private func startTimeout() {
+        cancelTimeout()
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: webViewTimeout, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async {
+                if let self = self, !self.isPageLoaded && !self.isErrorHandled {
+                    self.isErrorHandled = true
+                    self.handleError(error: .timeout)
+                }
+            }
+        }
+    }
+    
+    /// Cancel timeout timer
+    private func cancelTimeout() {
+        timeoutTimer?.invalidate()
+        timeoutTimer = nil
     }
     
     /// Cancel WebView authentication
@@ -344,15 +391,17 @@ public class VeryOauthSDK: NSObject {
         if let language = config.language {
             queryItems.append(URLQueryItem(name: "lang", value: language))
         }
-           if let userId = config.userId {
+        if let userId = config.userId {
             queryItems.append(URLQueryItem(name: "user_id", value: userId))
         }
-        
         
         // Add optional scope
         if let scope = config.scope {
             queryItems.append(URLQueryItem(name: "scope", value: scope))
         }
+        
+        // Add theme parameter
+        queryItems.append(URLQueryItem(name: "theme", value: config.themeMode))
         
         // Add state parameter for security
         let state = UUID().uuidString
@@ -369,8 +418,13 @@ public class VeryOauthSDK: NSObject {
     }
 
     private func handleError(error: OAuthErrorType) {
-        completionHandler?(OAuthResult(code: "", error: error))
-        dismissWebViewIfNeeded()
+        if !isErrorHandled {
+            isErrorHandled = true
+            cancelTimeout()
+            completionHandler?(OAuthResult(code: "", error: error))
+            dismissWebViewIfNeeded()
+        }
+
     }
     
     private func handleAuthenticationResult(callbackURL: URL?, error: OAuthErrorType? = nil) {
@@ -383,6 +437,7 @@ public class VeryOauthSDK: NSObject {
             handleError(error: .verificationFailed)
             return
         }
+        
         
         // Parse callback URL to extract authorization code
         if let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
@@ -485,32 +540,70 @@ extension VeryOauthSDK: WKNavigationDelegate {
         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
            let queryItems = components.queryItems {
             
-            // Check if URL starts with redirectUri
-            if let redirectUri = currentConfig?.redirectUri,
-               url.absoluteString.hasPrefix(redirectUri) {
-                
-                // Check for error in callback
-                if queryItems.contains(where: { $0.name == "error" }) {
-                    handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
-                } else if queryItems.contains(where: { $0.name == "code" }) {
-                    handleAuthenticationResult(callbackURL: url, error: nil)
-                } else {
-                    handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
+                // Check if URL starts with redirectUri
+                if let redirectUri = currentConfig?.redirectUri,
+                   url.absoluteString.hasPrefix(redirectUri) {
+                    
+                    // Cancel timeout when callback is received
+                    cancelTimeout()
+                    
+                    // Check for error in callback
+                    if queryItems.contains(where: { $0.name == "error" }) {
+                        if queryItems.first(where: { $0.name == "error" })?.value == "access_denied" {
+                            handleAuthenticationResult(callbackURL: nil, error: .userCanceled)
+                        } else {
+                            handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
+                        }
+                    } else if queryItems.contains(where: { $0.name == "code" }) {
+                        handleAuthenticationResult(callbackURL: url, error: nil)
+                    } else {
+                        handleAuthenticationResult(callbackURL: nil, error: .verificationFailed)
+                    }
+                    
+                    decisionHandler(.cancel)
+                    return
                 }
-                
-                decisionHandler(.cancel)
-                return
-            }
         }
         
         decisionHandler(.allow)
     }
 
 
+    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // Page started loading
+        isPageLoaded = false
+        isErrorHandled = false
+        startTimeout()
+    }
+    
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // Page finished loading
+        isPageLoaded = true
+        cancelTimeout()
+    }
+    
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        print("WebView failed provisional navigation: \(error.localizedDescription)")
+        handleAuthenticationResult(callbackURL: nil, error: .networkError)
+        
+    }
+    
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         print("WebView failed to load: \(error.localizedDescription)")
         handleAuthenticationResult(callbackURL: nil, error: .networkError)
     }
     
-   
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        // Handle HTTP errors (4xx, 5xx)
+        if let httpResponse = navigationResponse.response as? HTTPURLResponse {
+            let statusCode = httpResponse.statusCode
+            if statusCode >= 400 {
+                print("WebView received HTTP error: \(statusCode)")
+                handleAuthenticationResult(callbackURL: nil, error: .networkError)
+                decisionHandler(.cancel)
+                return
+            }
+        }
+        decisionHandler(.allow)
+    }
 }

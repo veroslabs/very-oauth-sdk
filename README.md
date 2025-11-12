@@ -17,14 +17,14 @@ This document first presents the integration APIs, followed by a description of 
 
 ```ruby
 # Podfile
-pod 'VeryOauthSDK', '~> 1.0.8'
+pod 'VeryOauthSDK', '~> 1.0.12'
 ```
 
 #### Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.8")
+    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.12")
 ]
 ```
 
@@ -36,7 +36,8 @@ import VeryOauthSDK
 let config = OAuthConfig(
     clientId: "your_client_id",
     redirectUri: "your_redirect_uri",
-    userId: "user_id" // empty string for registration, valid user_id string for verification
+    userId: "user_id", // empty string for registration, valid user_id string for verification
+    themeMode: "dark" // dark or light
 )
 
 VeryOauthSDK().authenticate(
@@ -58,7 +59,7 @@ VeryOauthSDK().authenticate(
 ```gradle
 // build.gradle (Module: app)
 dependencies {
-    implementation 'org.very:veryoauthsdk:1.0.8'
+    implementation 'org.very:veryoauthsdk:1.0.12'
 }
 ```
 
@@ -102,6 +103,7 @@ VeryOauthSDK.getInstance().authenticate(
 | `clientId`    | String | The OAuth client ID assigned to your application.                                         |
 | `redirectUri` | String | The OAuth redirect URI registered for your application.                                   |
 | `userId`      | String | For enrollment, use an empty string. For verification, use the `external_user_id` string. |
+| `themeMode`   | String | Supports dark or light mode (default: dark).                                              |
 
 Before integration, please contact **[support@very.org](mailto:support@very.org)** to obtain your `client_id`, `client_secret`, and to register your `redirectUri`.
 The `client_id` and `redirectUri` must be provided to the SDK, while the `client_secret` should be securely configured on your backend OAuth server.
@@ -126,6 +128,7 @@ If authentication fails, the SDK returns an `error` to the app. Possible error t
 - **`RegistrationFailed`** – The palm registration was identified as a potential fraud attempt.
 - **`Timeout`** – The authentication request timed out.
 - **`NetworkError`** – A network connectivity issue occurred.
+- **`CameraPermissionDenied`** – The user has not granted camera permissions.
 
 ## Authentication Workflow
 

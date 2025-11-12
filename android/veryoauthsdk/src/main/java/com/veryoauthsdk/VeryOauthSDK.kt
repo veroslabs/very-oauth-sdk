@@ -26,8 +26,16 @@ class OAuthConfig @JvmOverloads constructor(
     var scope: String? = "openid",
     var browserMode: BrowserMode = BrowserMode.WEBVIEW,
     val userId: String? = null,
-    var language: String? = null
-)
+    var language: String? = null,
+    var themeMode: String = "dark"
+) {
+    init {
+        // Validate themeMode
+        require(themeMode == "light" || themeMode == "dark") {
+            "themeMode must be either 'light' or 'dark'"
+        }
+    }
+}
 
 /**
  * OAuth error types enum
@@ -38,7 +46,8 @@ enum class OAuthErrorType(val value: Int) {
     VERIFICATION_FAILED(3),
     REGISTRATION_FAILED(4),
     TIMEOUT(5),
-    NETWORK_ERROR(6)
+    NETWORK_ERROR(6),
+    CAMERA_PERMISSION_DENIED(7)
 }
 
 /**
@@ -139,7 +148,11 @@ class VeryOauthSDK private constructor() {
             putExtra("auth_url", authUrl.toString())
             putExtra("redirect_uri", config.redirectUri)
             putExtra("auth_mode", BrowserMode.SYSTEM_BROWSER.name)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Only add NEW_TASK flag if context is not an Activity
+            // This ensures proper back navigation when using Activity context
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         }
         
         context.startActivity(intent)
@@ -153,7 +166,11 @@ class VeryOauthSDK private constructor() {
             putExtra("auth_url", authUrl.toString())
             putExtra("redirect_uri", config.redirectUri)
             putExtra("auth_mode", BrowserMode.WEBVIEW.name)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Only add NEW_TASK flag if context is not an Activity
+            // This ensures proper back navigation when using Activity context
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         }
         
         context.startActivity(intent)
@@ -174,6 +191,7 @@ class VeryOauthSDK private constructor() {
                 config.scope?.let { appendQueryParameter("scope", it) }
                 config.userId?.let { appendQueryParameter("user_id", it) }
                 config.language?.let { appendQueryParameter("lang", it) }
+                appendQueryParameter("theme", config.themeMode)
             }
             .build()
     }
