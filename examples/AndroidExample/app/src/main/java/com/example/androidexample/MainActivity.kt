@@ -100,7 +100,8 @@ fun OAuthDemoScreen(
                         clientId = "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
                         redirectUri = "https://veros-web-oauth-demo.vercel.app/callback",
                         userId = "",
-                        themeMode = "light"
+                        themeMode = "light",
+                        language="zh",
                     )
                     
                     VeryOauthSDK.getInstance().authenticate(

@@ -110,6 +110,7 @@ struct ContentView: View {
             clientId: "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
             redirectUri: "https://veros-web-oauth-demo.vercel.app/callback",
             userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
+            language: "zh-TW",
             themeMode: "light"
         )
         

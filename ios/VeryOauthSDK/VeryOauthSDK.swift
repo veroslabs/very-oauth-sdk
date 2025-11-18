@@ -92,6 +92,59 @@ public class VeryOauthSDK: NSObject {
     // Constants
     private let webViewTimeout: TimeInterval = 30.0 // 30 seconds timeout
     
+    // Language mapping for Cancel button
+    private static let cancelButtonTexts: [String: String] = [
+        "ar-AE": "إلغاء",
+        "az-AZ": "Ləğv et",
+        "bg-BG": "Отказ",
+        "bn-BD": "বাতিল",
+        "cs-CZ": "Zrušit",
+        "da-DK": "Annuller",
+        "de-DE": "Abbrechen",
+        "el-GR": "Ακύρωση",
+        "en-GB": "Cancel",
+        "en-IN": "Cancel",
+        "en-TR": "Cancel",
+        "en-US": "Cancel",
+        "es-ES": "Cancelar",
+        "et-EE": "Tühista",
+        "fa-IR": "لغو",
+        "fi-FI": "Peruuta",
+        "fil-PH": "Kanselahin",
+        "fr-FR": "Annuler",
+        "he-IL": "ביטול",
+        "hi-IN": "रद्द करें",
+        "hr-HR": "Odustani",
+        "hu-HU": "Mégse",
+        "id-ID": "Batal",
+        "it-IT": "Annulla",
+        "ja-JP": "キャンセル",
+        "kk-KZ": "Болдырмау",
+        "ko-KR": "취소",
+        "lo-LA": "ຍົກເລີກ",
+        "lt-LT": "Atšaukti",
+        "lv-LV": "Atcelt",
+        "ms-MY": "Batal",
+        "nb-NO": "Avbryt",
+        "nl-NL": "Annuleren",
+        "pl-PL": "Anuluj",
+        "pt-BR": "Cancelar",
+        "pt-PT": "Cancelar",
+        "ro-RO": "Anulează",
+        "ru-RU": "Отмена",
+        "si-LK": "අවලංගු කරන්න",
+        "sk-SK": "Zrušiť",
+        "sl-SI": "Prekliči",
+        "sv-SE": "Avbryt",
+        "th-TH": "ยกเลิก",
+        "tr-CT": "İptal",
+        "tr-TR": "İptal",
+        "uk-UA": "Скасувати",
+        "vi-VN": "Hủy",
+        "zh-MY": "取消",
+        "zh-TW": "取消"
+    ]
+    
     // MARK: - Public Methods
     
     /// Initialize the SDK
@@ -322,8 +375,9 @@ public class VeryOauthSDK: NSObject {
         let navigationController = UINavigationController(rootViewController: webViewController)
         navigationController.modalPresentationStyle = .fullScreen
         
-        // Add cancel button
-        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelWebViewAuthentication))
+        // Add cancel button with localized text
+        let cancelText = getCancelButtonText()
+        let cancelButton = UIBarButtonItem(title: cancelText, style: .plain, target: self, action: #selector(cancelWebViewAuthentication))
         webViewController.navigationItem.leftBarButtonItem = cancelButton
         
         presentingViewController.present(navigationController, animated: true)
@@ -357,6 +411,15 @@ public class VeryOauthSDK: NSObject {
     private func cancelTimeout() {
         timeoutTimer?.invalidate()
         timeoutTimer = nil
+    }
+    
+    /// Get localized Cancel button text based on language
+    private func getCancelButtonText() -> String {
+        guard let language = currentConfig?.language,
+              let localizedText = VeryOauthSDK.cancelButtonTexts[language] else {
+            return "Cancel" // Default to English
+        }
+        return localizedText
     }
     
     /// Cancel WebView authentication

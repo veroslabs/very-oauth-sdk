@@ -196,7 +196,7 @@ class OAuthActivity : AppCompatActivity() {
             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             
             // Additional security settings
-            settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             settings.databaseEnabled = false
             settings.setGeolocationEnabled(false)
             
