@@ -70,6 +70,22 @@ import AVFoundation
 }
 
 
+// MARK: - Custom WebViewController to detect dismissal
+@available(iOS 12.0, *)
+private class OAuthWebViewController: UIViewController {
+    weak var sdkInstance: VeryOauthSDK?
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        DispatchQueue.main.async { [weak self] in
+            guard let sdk = self?.sdkInstance else { return }
+            if !sdk.isErrorHandled {
+                sdk.handleError(error: .userCanceled)
+            }
+        }
+    }
+}
+
 // MARK: - VeryOauthSDK Main Class
 @available(iOS 12.0, *)
 public class VeryOauthSDK: NSObject {
@@ -78,13 +94,14 @@ public class VeryOauthSDK: NSObject {
     private var webAuthSession: ASWebAuthenticationSession?
     private var webView: WKWebView?
     private var webViewController: UIViewController?
+    private var navigationController: UINavigationController?
     private var currentConfig: OAuthConfig?
     private var completionHandler: ((OAuthResult) -> Void)?
     
     // Network error handling properties
     private var timeoutTimer: Timer?
     private var isPageLoaded = false
-    private var isErrorHandled = false
+    internal var isErrorHandled = false // Make internal so OAuthWebViewController can access
     
     // Thread-safe properties
     private let queue = DispatchQueue(label: "com.verysdk.queue", attributes: .concurrent)
@@ -207,12 +224,9 @@ public class VeryOauthSDK: NSObject {
         webAuthSession?.cancel()
         webAuthSession = nil
         
-        // Also cancel WebView authentication if active
-        DispatchQueue.main.async { [weak self] in
-            self?.webViewController?.dismiss(animated: true) {
-                self?.cleanupWebView()
-            }
-        }
+        // Trigger userCanceled error callback
+        // handleError will call dismissWebViewIfNeeded which will clean up
+        handleError(error: .userCanceled)
     }
     
     /// Clean up WebView resources
@@ -347,7 +361,6 @@ public class VeryOauthSDK: NSObject {
     private func presentWebView(with authURL: URL, presentingViewController: UIViewController) {
         // Create WebView configuration with camera support
         let configuration = WKWebViewConfiguration()
-        
         // Enable camera access for WebView
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
@@ -360,8 +373,9 @@ public class VeryOauthSDK: NSObject {
         webView.backgroundColor = UIColor(red: 0x1C/255.0, green: 0x21/255.0, blue: 0x25/255.0, alpha: 1.0)
         webView.isOpaque = false
         
-        // Create view controller to present WebView
-        let webViewController = UIViewController()
+        // Create custom view controller to present WebView with dismissal detection
+        let webViewController = OAuthWebViewController()
+        webViewController.sdkInstance = self
         webViewController.view = webView
         webViewController.view.backgroundColor = UIColor(red: 0x1C/255.0, green: 0x21/255.0, blue: 0x25/255.0, alpha: 1.0)
         self.webViewController = webViewController
@@ -374,6 +388,12 @@ public class VeryOauthSDK: NSObject {
         // Present WebView
         let navigationController = UINavigationController(rootViewController: webViewController)
         navigationController.modalPresentationStyle = .fullScreen
+        self.navigationController = navigationController
+        
+        // Set presentation controller delegate to detect dismissal
+        if let presentationController = navigationController.presentationController {
+            presentationController.delegate = self
+        }
         
         // Add cancel button with localized text
         let cancelText = getCancelButtonText()
@@ -430,13 +450,12 @@ public class VeryOauthSDK: NSObject {
     /// Dismiss WebView if it's currently presented
     private func dismissWebViewIfNeeded() {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, let webViewController = self.webViewController else { return }
+            guard let self = self, let navigationController = self.navigationController else { return }
             
             // Only dismiss if it's a WebView authentication (not ASWebAuthenticationSession)
             if self.currentConfig?.browserMode == .webview {
-                webViewController.dismiss(animated: true) {
-                    self.webViewController = nil
-                    self.webView = nil
+                navigationController.dismiss(animated: true) {
+                    self.cleanupWebView()
                 }
             }
         }
@@ -480,7 +499,7 @@ public class VeryOauthSDK: NSObject {
         return url.scheme
     }
 
-    private func handleError(error: OAuthErrorType) {
+    internal func handleError(error: OAuthErrorType) {
         if !isErrorHandled {
             isErrorHandled = true
             cancelTimeout()
@@ -515,18 +534,19 @@ public class VeryOauthSDK: NSObject {
             // Extract authorization code
             if let code = queryItems.first(where: { $0.name == "code" })?.value {
                 let state = queryItems.first(where: { $0.name == "state" })?.value
+                // Mark as handled before calling completion handler to prevent dismissal detection from triggering cancel
+                isErrorHandled = true
                 completionHandler?(OAuthResult(code: code, error: .success))
+                // Clean up after successful authentication
+                webAuthSession = nil
+                dismissWebViewIfNeeded()
+                // Note: completionHandler will be cleared in cleanupWebView() after dismiss completes
             } else {
                 handleError(error: .verificationFailed)
             }
         } else {
             handleError(error: .verificationFailed)
         }
-        
-        // Clean up
-        webAuthSession = nil
-        dismissWebViewIfNeeded()
-        completionHandler = nil
     }
 }
 
@@ -535,6 +555,19 @@ public class VeryOauthSDK: NSObject {
 extension VeryOauthSDK: ASWebAuthenticationPresentationContextProviding {
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return UIApplication.shared.windows.first { $0.isKeyWindow } ?? ASPresentationAnchor()
+    }
+}
+
+// MARK: - UIAdaptivePresentationControllerDelegate
+@available(iOS 13.0, *)
+extension VeryOauthSDK: UIAdaptivePresentationControllerDelegate {
+    /// Called when the modal is dismissed (e.g., by swipe down gesture or left swipe)
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        // Only trigger cancel if error hasn't been handled yet
+        // This prevents canceling when authentication succeeds
+        if !isErrorHandled {
+            handleError(error: .userCanceled)
+        }
     }
 }
 

@@ -8,13 +8,83 @@
 import SwiftUI
 import VeryOauthSDK
 
+// MARK: - Gesture Handler Target
+class WindowGestureTarget: NSObject {
+    static let shared = WindowGestureTarget()
+    private static var gestureRecognizer: UIScreenEdgePanGestureRecognizer?
+    
+    @objc func handleLeftSwipe(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        if gesture.state == .recognized {
+            dismissCurrentNavigationController()
+        }
+    }
+    
+    private func dismissCurrentNavigationController() {
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+                  let rootViewController = window.rootViewController else {
+                return
+            }
+            
+            // Find the topmost presented view controller
+            var topViewController = rootViewController
+            while let presented = topViewController.presentedViewController {
+                topViewController = presented
+            }
+            
+            // If it's a UINavigationController, dismiss it
+            if let navigationController = topViewController as? UINavigationController {
+                navigationController.dismiss(animated: true, completion: nil)
+            } else if topViewController.presentingViewController != nil {
+                // If it's a regular view controller that was presented, dismiss it
+                topViewController.dismiss(animated: true, completion: nil)
+            }
+        }
+    }
+    
+    static func setupGestureRecognizer() {
+        // Check if gesture recognizer already exists
+        if gestureRecognizer != nil {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+                return
+            }
+            
+            // Add left edge swipe gesture to dismiss navigation controller
+            let edgePanGesture = UIScreenEdgePanGestureRecognizer(target: WindowGestureTarget.shared, action: #selector(WindowGestureTarget.handleLeftSwipe(_:)))
+            edgePanGesture.edges = .left
+            window.addGestureRecognizer(edgePanGesture)
+            
+            // Store reference to avoid duplicates
+            gestureRecognizer = edgePanGesture
+        }
+    }
+}
+
+// MARK: - Gesture Handler for Window Level
+struct WindowGestureHandler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        let viewController = UIViewController()
+        // Setup gesture recognizer when view controller is created
+        WindowGestureTarget.setupGestureRecognizer()
+        return viewController
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Ensure gesture recognizer is set up
+        WindowGestureTarget.setupGestureRecognizer()
+    }
+}
 
 struct ContentView: View {
     @State private var authResult: String = "Authentication result will appear here"
     @State private var resultColor: Color = .gray
     @State private var isLoading: Bool = false
-    
-
     
     var body: some View {
         ScrollView {
@@ -84,6 +154,11 @@ struct ContentView: View {
             }
             .padding()
         }
+        .background(
+            WindowGestureHandler()
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
+        )
     }
     
     func startAuthentication() {
@@ -105,11 +180,11 @@ struct ContentView: View {
 //         {
 //   "sub": "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d"
 // }
+            // userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
         
         let config = OAuthConfig(
             clientId: "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
             redirectUri: "https://veros-web-oauth-demo.vercel.app/callback",
-            userId: "vu-1ed0a927-a336-45dd-9c73-20092db9ae8d",
             language: "zh-TW",
             themeMode: "light"
         )
