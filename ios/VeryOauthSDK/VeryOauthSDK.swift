@@ -384,6 +384,7 @@ public class VeryOauthSDK: NSObject {
         webView.navigationDelegate = self
         webView.uiDelegate = self  // Set UI delegate for media permissions
 
+
         
         // Present WebView
         let navigationController = UINavigationController(rootViewController: webViewController)
@@ -686,6 +687,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
     
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         print("WebView failed to load: \(error.localizedDescription)")
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+            return
+        }
+
         handleAuthenticationResult(callbackURL: nil, error: .networkError)
     }
     

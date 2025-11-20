@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "VeryOauthSDK"
-  spec.version = "1.0.14"
+  spec.version = "1.0.15"
   spec.summary      = "VeryOauthSDK - OAuth authentication SDK for iOS"
   spec.description  = <<-DESC
                       VeryOauthSDK provides easy OAuth authentication for iOS apps

@@ -15,7 +15,7 @@ android {
         minSdk 23
         targetSdk 34
         versionCode 1
-        versionName "1.0.14"
+        versionName "1.0.15"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -85,7 +85,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'org.very'
             artifactId = 'veryoauthsdk'
-            version = '1.0.14'
+            version = '1.0.15'
             
             // Add the AAR artifact
             artifact("$buildDir/outputs/aar/${project.name}-release.aar")
