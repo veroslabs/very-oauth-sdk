@@ -15,6 +15,12 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebChromeClient
 import android.webkit.PermissionRequest
 import android.webkit.WebResourceError
+import android.widget.ProgressBar
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.graphics.drawable.AnimationDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.ImageDecoder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
@@ -35,6 +41,8 @@ class OAuthActivity : AppCompatActivity() {
     private var timeoutRunnable: Runnable? = null
     private var isPageLoaded = false
     private var isErrorHandled = false
+    private var loadingProgressBar: ProgressBar? = null
+    private var loadingImageView: ImageView? = null
     
     companion object {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 1001
@@ -177,6 +185,11 @@ class OAuthActivity : AppCompatActivity() {
      * Start WebView for OAuth authentication
      */
     private fun startWebView(url: String) {
+        // Create a FrameLayout to contain WebView and ProgressBar
+        val container = FrameLayout(this).apply {
+            setBackgroundColor(0xFF1C2125.toInt())
+        }
+        
         webView = WebView(this).apply {
             // Set background color to #1C2125
             setBackgroundColor(0xFF1C2125.toInt())
@@ -234,6 +247,13 @@ class OAuthActivity : AppCompatActivity() {
                     super.onPageStarted(view, url, favicon)
                     isPageLoaded = false
                     isErrorHandled = false
+                    // Show loading indicator
+                    loadingProgressBar?.visibility = android.view.View.VISIBLE
+                    loadingImageView?.visibility = android.view.View.VISIBLE
+                    // Restart GIF animation if using ImageView
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        (loadingImageView?.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.start()
+                    }
                     startTimeout()
                 }
                 
@@ -241,6 +261,13 @@ class OAuthActivity : AppCompatActivity() {
                     super.onPageFinished(view, url)
                     isPageLoaded = true
                     cancelTimeout()
+                    // Hide loading indicator
+                    loadingProgressBar?.visibility = android.view.View.GONE
+                    loadingImageView?.visibility = android.view.View.GONE
+                    // Stop GIF animation if using ImageView
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        (loadingImageView?.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.stop()
+                    }
                 }
                 
                 override fun onReceivedError(
@@ -254,6 +281,13 @@ class OAuthActivity : AppCompatActivity() {
                     if (request?.isForMainFrame == true && !isErrorHandled) {
                         isErrorHandled = true
                         cancelTimeout()
+                        // Hide loading indicator on error
+                        loadingProgressBar?.visibility = android.view.View.GONE
+                        loadingImageView?.visibility = android.view.View.GONE
+                        // Stop GIF animation if using ImageView
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                            (loadingImageView?.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.stop()
+                        }
                         
                         // Handle network errors based on WebView error callback
                         // This includes DNS failures, connection timeouts, network unavailable, etc.
@@ -272,6 +306,13 @@ class OAuthActivity : AppCompatActivity() {
                     if (request?.isForMainFrame == true && !isErrorHandled) {
                         isErrorHandled = true
                         cancelTimeout()
+                        // Hide loading indicator on error
+                        loadingProgressBar?.visibility = android.view.View.GONE
+                        loadingImageView?.visibility = android.view.View.GONE
+                        // Stop GIF animation if using ImageView
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                            (loadingImageView?.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.stop()
+                        }
                         
                         val statusCode = errorResponse?.statusCode ?: 0
                         // Handle HTTP errors (4xx, 5xx)
@@ -283,10 +324,70 @@ class OAuthActivity : AppCompatActivity() {
             }
         }
         
+        // Add WebView to container first
+        container.addView(webView)
+        
+        // Try to load GIF loading indicator
+        val loadingImageView = ImageView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+            scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+            visibility = android.view.View.VISIBLE
+            elevation = 10f
+        }
+        
+        // Try to load GIF using AnimatedImageDrawable (API 28+)
+        var gifLoaded = false
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            try {
+                val resourceId = resources.getIdentifier("loading", "drawable", packageName)
+                if (resourceId != 0) {
+                    val source = ImageDecoder.createSource(resources, resourceId)
+                    val drawable = ImageDecoder.decodeDrawable(source) { decoder, info, source ->
+                        decoder.setTargetSize(200, 200) // Adjust size as needed
+                    }
+                    if (drawable is android.graphics.drawable.AnimatedImageDrawable) {
+                        loadingImageView.setImageDrawable(drawable)
+                        drawable.start()
+                        gifLoaded = true
+                        this.loadingImageView = loadingImageView
+                    }
+                }
+            } catch (e: Exception) {
+                // GIF not found or failed to load, will use fallback
+                e.printStackTrace()
+            }
+        }
+        
+        // Fallback to ProgressBar if GIF not loaded
+        if (!gifLoaded) {
+            loadingProgressBar = ProgressBar(this, null, android.R.attr.progressBarStyleLarge).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    gravity = android.view.Gravity.CENTER
+                }
+                isIndeterminate = true
+                visibility = android.view.View.VISIBLE
+                elevation = 10f
+            }
+            container.addView(loadingProgressBar)
+        } else {
+            container.addView(loadingImageView)
+        }
+        
         // Set Activity background color to match WebView
         // window.decorView.setBackgroundColor(0xFF1C2125.toInt())
         
-        setContentView(webView)
+        setContentView(container)
+        // Show loading indicator immediately before loading URL
+        loadingProgressBar?.visibility = android.view.View.VISIBLE
+        loadingImageView?.visibility = android.view.View.VISIBLE
         webView?.loadUrl(url)
     }
     
@@ -400,10 +501,23 @@ class OAuthActivity : AppCompatActivity() {
      * Clean up WebView resources
      */
     private fun cleanupWebView() {
+        // Hide loading indicator
+        loadingProgressBar?.visibility = android.view.View.GONE
+        loadingProgressBar = null
+        
+        // Stop and hide GIF loading indicator
+        loadingImageView?.visibility = android.view.View.GONE
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            (loadingImageView?.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.stop()
+        }
+        loadingImageView = null
+        
         webView?.let {
             it.stopLoading()
-            it.clearHistory()
-            it.clearCache(true)
+            // Don't clear history as it may affect cache
+            // it.clearHistory()
+            // Keep cache for better performance on next launch (including WASM resources)
+            // it.clearCache(true)
             it.loadUrl("about:blank")
             it.onPause()
             it.removeAllViews()

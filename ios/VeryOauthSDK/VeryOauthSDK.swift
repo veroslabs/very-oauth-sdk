@@ -97,6 +97,7 @@ public class VeryOauthSDK: NSObject {
     private var navigationController: UINavigationController?
     private var currentConfig: OAuthConfig?
     private var completionHandler: ((OAuthResult) -> Void)?
+    private var loadingIndicator: UIActivityIndicatorView?
     
     // Network error handling properties
     private var timeoutTimer: Timer?
@@ -237,6 +238,11 @@ public class VeryOauthSDK: NSObject {
         webView?.stopLoading()
         webView = nil
         webViewController = nil
+        
+        // Remove loading indicator
+        loadingIndicator?.stopAnimating()
+        loadingIndicator?.removeFromSuperview()
+        loadingIndicator = nil
         
         // Reset error handling state
         isPageLoaded = false
@@ -379,6 +385,18 @@ public class VeryOauthSDK: NSObject {
         webViewController.view = webView
         webViewController.view.backgroundColor = UIColor(red: 0x1C/255.0, green: 0x21/255.0, blue: 0x25/255.0, alpha: 1.0)
         self.webViewController = webViewController
+        
+        // Create and add loading indicator
+        // Use whiteLarge style for iOS 12.0+ compatibility (large style requires iOS 13.0+)
+        let loadingIndicator = UIActivityIndicatorView(style: .whiteLarge)
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        webViewController.view.addSubview(loadingIndicator)
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: webViewController.view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: webViewController.view.centerYAnchor)
+        ])
+        loadingIndicator.startAnimating()
+        self.loadingIndicator = loadingIndicator
         
         // Configure WebView delegates
         webView.navigationDelegate = self
@@ -670,6 +688,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
         // Page started loading
         isPageLoaded = false
         isErrorHandled = false
+        // Show loading indicator
+        // DispatchQueue.main.async { [weak self] in
+        //     self?.loadingIndicator?.startAnimating()
+        //     self?.loadingIndicator?.isHidden = false
+        // }
         startTimeout()
     }
     
@@ -677,6 +700,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
         // Page finished loading
         isPageLoaded = true
         cancelTimeout()
+        // Hide loading indicator
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator?.stopAnimating()
+            self?.loadingIndicator?.isHidden = true
+        }
     }
     
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -684,6 +712,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
             return
+        }
+        // Hide loading indicator on error
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator?.stopAnimating()
+            self?.loadingIndicator?.isHidden = true
         }
         handleAuthenticationResult(callbackURL: nil, error: .networkError)
     }
@@ -694,7 +727,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
             return
         }
-
+        // Hide loading indicator on error
+        DispatchQueue.main.async { [weak self] in
+            self?.loadingIndicator?.stopAnimating()
+            self?.loadingIndicator?.isHidden = true
+        }
         handleAuthenticationResult(callbackURL: nil, error: .networkError)
     }
     
@@ -704,6 +741,11 @@ extension VeryOauthSDK: WKNavigationDelegate {
             let statusCode = httpResponse.statusCode
             if statusCode >= 400 {
                 print("WebView received HTTP error: \(statusCode)")
+                // Hide loading indicator on error
+                DispatchQueue.main.async { [weak self] in
+                    self?.loadingIndicator?.stopAnimating()
+                    self?.loadingIndicator?.isHidden = true
+                }
                 handleAuthenticationResult(callbackURL: nil, error: .networkError)
                 decisionHandler(.cancel)
                 return

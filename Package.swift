@@ -19,7 +19,10 @@ let package = Package(
         .target(
             name: "VeryOauthSDK",
             dependencies: [],
-            path: "ios/VeryOauthSDK"
+            path: "ios/VeryOauthSDK",
+            resources: [
+                .process("Resources")   // <- 让 SwiftPM 处理资源
+            ]
         )
     ],
     swiftLanguageVersions: [.v5]

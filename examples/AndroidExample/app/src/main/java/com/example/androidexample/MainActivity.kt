@@ -97,12 +97,12 @@ fun OAuthDemoScreen(
                     
                     // Real VeryOauthSDK authentication - matching iOS example config
                     val config = OAuthConfig(
-                        clientId = "veros_145b3a8f2a8f4dc59394cbbd0dd2a77f",
-                        redirectUri = "https://veros-web-oauth-demo.vercel.app/callback",
-                        userId = "",
-                        themeMode = "light",
+                        clientId = "very_d1694afae91e47b08290ce37f1e8e472",
+                        redirectUri = "http://localhost:3000/callback",
                         language="zh",
                     )
+
+            
                     
                     VeryOauthSDK.getInstance().authenticate(
                         context = context,

@@ -17,14 +17,14 @@ This document first presents the integration APIs, followed by a description of 
 
 ```ruby
 # Podfile
-pod 'VeryOauthSDK', '~> 1.0.16'
+pod 'VeryOauthSDK', '~> 1.0.17'
 ```
 
 #### Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.16")
+    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.17")
 ]
 ```
 
@@ -59,7 +59,7 @@ VeryOauthSDK().authenticate(
 ```gradle
 // build.gradle (Module: app)
 dependencies {
-    implementation 'org.very:veryoauthsdk:1.0.16'
+    implementation 'org.very:veryoauthsdk:1.0.17'
 }
 ```
 
