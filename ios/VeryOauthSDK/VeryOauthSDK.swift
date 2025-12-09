@@ -4,6 +4,48 @@ import UIKit
 @preconcurrency import WebKit
 import AVFoundation
 
+// MARK: - Support Configuration
+@objc public class SupportConfig: NSObject {
+    @objc public let iosVersion: String
+    
+    @objc public init(iosVersion: String) {
+        self.iosVersion = iosVersion
+    }
+}
+
+// MARK: - Support Config Manager
+@available(iOS 12.0, *)
+internal class SupportConfigManager {
+    private static let userDefaults = UserDefaults.standard
+    private static let keyPrefix = "veryoauthsdk_support_config_"
+    private static let keyIOSVersion = keyPrefix + "ios_version"
+    
+    // Default configuration
+    private static let defaultConfig = SupportConfig(
+        iosVersion: "16.4"
+    )
+    
+    static func getConfig() -> SupportConfig {
+        let iosVersion = userDefaults.string(forKey: keyIOSVersion) ?? defaultConfig.iosVersion
+        
+        return SupportConfig(
+            iosVersion: iosVersion
+        )
+    }
+    
+    static func updateConfig(_ config: SupportConfig) {
+        userDefaults.set(config.iosVersion, forKey: keyIOSVersion)
+        userDefaults.synchronize()
+    }
+    
+    static func updateConfigFromDictionary(_ dict: [String: Any]) {
+        if let iosVersion = dict["iosVersion"] as? String {
+            userDefaults.set(iosVersion, forKey: keyIOSVersion)
+        }
+        userDefaults.synchronize()
+    }
+}
+
 // MARK: - Authentication Mode
 @objc public enum BrowserMode: Int, CaseIterable {
     case systemBrowser = 0  // Use system browser (ASWebAuthenticationSession) - default
@@ -52,6 +94,7 @@ import AVFoundation
     case timeout = 5
     case networkError = 6
     case cameraPermissionDenied = 7
+    case deviceNotSupport = 8
 }
 
 // MARK: - OAuth Result
@@ -173,6 +216,98 @@ public class VeryOauthSDK: NSObject {
     /// Shared instance for easy access
     @objc public static let shared = VeryOauthSDK()
     
+    /// Check if current device supports using this SDK
+    /// Checks iOS version requirement based on current configuration,
+    /// then asynchronously fetches and updates configuration from API
+    /// - Returns: true if device meets requirements, false otherwise
+    @objc public static func isSupport() -> Bool {
+        // First, check with current configuration and return immediately
+        let config = SupportConfigManager.getConfig()
+        
+        // Compare iOS version strings
+        let currentVersion = UIDevice.current.systemVersion
+        let isSupported = compareVersion(currentVersion, config.iosVersion) >= 0
+        
+        // Fetch latest config in background for next time
+        fetchAndUpdateConfig()
+        
+        return isSupported
+    }
+    
+    /// Fetch support configuration from API and update local storage
+    /// This is called internally and runs asynchronously
+    private static func fetchAndUpdateConfig() {
+        guard let apiUrl = configApiUrl, let url = URL(string: apiUrl) else {
+            return
+        }
+        
+        // Use URLSession to fetch config asynchronously
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            guard error == nil,
+                  let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200,
+                  let data = data else {
+                // Silently fail - network errors should not affect isSupport result
+                // Configuration will use cached values
+                return
+            }
+            
+            do {
+                if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let minObject = jsonObject["min"] as? [String: Any] {
+                    var configDict: [String: Any] = [:]
+                    
+                    // Parse iosVersion (iOS SDK only needs iOS configuration)
+                    if let iosVersion = minObject["iosVersion"] as? String {
+                        configDict["iosVersion"] = iosVersion
+                    }
+                    
+                    if !configDict.isEmpty {
+                        SupportConfigManager.updateConfigFromDictionary(configDict)
+                    }
+                }
+            } catch {
+                // Silently fail - parsing errors should not affect isSupport result
+                // Configuration will use cached values
+            }
+        }
+        task.resume()
+    }
+    
+    /// API URL for fetching support configuration
+    private static var configApiUrl: String? = "https://api.very.org/v1/sdk/config/web"
+    
+    /// Set the API URL for fetching support configuration
+    /// - Parameter url: API endpoint URL
+    @objc public static func setConfigApiUrl(_ url: String?) {
+        configApiUrl = url
+    }
+    
+    /// Compare two version strings
+    /// - Parameters:
+    ///   - version1: First version string (e.g., "16.4")
+    ///   - version2: Second version string (e.g., "16.4")
+    /// - Returns: Comparison result: negative if version1 < version2, 0 if equal, positive if version1 > version2
+    private static func compareVersion(_ version1: String, _ version2: String) -> Int {
+        let components1 = version1.split(separator: ".").compactMap { Int($0) }
+        let components2 = version2.split(separator: ".").compactMap { Int($0) }
+        
+        let maxCount = max(components1.count, components2.count)
+        
+        for i in 0..<maxCount {
+            let v1 = i < components1.count ? components1[i] : 0
+            let v2 = i < components2.count ? components2[i] : 0
+            
+            if v1 < v2 {
+                return -1
+            } else if v1 > v2 {
+                return 1
+            }
+        }
+        
+        return 0
+    }
+    
     /// Start OAuth authentication flow
     /// - Parameters:
     ///   - config: OAuth configuration
@@ -183,6 +318,14 @@ public class VeryOauthSDK: NSObject {
         presentingViewController: UIViewController,
         callback: @escaping (OAuthResult) -> Void
     ) {
+        // Check if device supports this SDK
+        if !VeryOauthSDK.isSupport() {
+            DispatchQueue.main.async {
+                callback(OAuthResult(code: "", error: .deviceNotSupport))
+            }
+            return
+        }
+        
         // Thread-safe property updates
         queue.async(flags: .barrier) { [weak self] in
             self?.completionHandler = callback

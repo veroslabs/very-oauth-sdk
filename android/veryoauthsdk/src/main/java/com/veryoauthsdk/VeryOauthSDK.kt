@@ -1,12 +1,17 @@
 package com.veryoauthsdk
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
 
 /**
  * Authentication mode enum
@@ -47,7 +52,8 @@ enum class OAuthErrorType(val value: Int) {
     REGISTRATION_FAILED(4),
     TIMEOUT(5),
     NETWORK_ERROR(6),
-    CAMERA_PERMISSION_DENIED(7)
+    CAMERA_PERMISSION_DENIED(7),
+    DEVICE_NOT_SUPPORT(8)
 }
 
 /**
@@ -70,10 +76,141 @@ class VeryOauthSDK private constructor() {
         @Volatile
         private var INSTANCE: VeryOauthSDK? = null
         
+        @Volatile
+        private var configApiUrl: String? = "https://api.very.org/v1/sdk/config/web"
+        
         @JvmStatic
         fun getInstance(): VeryOauthSDK {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: VeryOauthSDK().also { INSTANCE = it }
+            }
+        }
+        
+        /**
+         * Set the API URL for fetching support configuration
+         * @param url API endpoint URL
+         */
+        @JvmStatic
+        fun setConfigApiUrl(url: String?) {
+            configApiUrl = url
+        }
+        
+        /**
+         * Check if current device supports using this SDK
+         * Checks Android version and memory requirements based on current configuration,
+         * then asynchronously fetches and updates configuration from API
+         * @param context Application context
+         * @return true if device meets requirements, false otherwise
+         */
+        @JvmStatic
+        fun isSupport(context: Context): Boolean {
+            // First, check with current configuration and return immediately
+            val config = SupportConfigManager.getConfig(context)
+            
+            // Check Android version (API level)
+            val currentApiLevel = Build.VERSION.SDK_INT
+            val isVersionSupported = currentApiLevel >= config.androidApiLevel
+            
+            // Check memory (RAM) requirement
+            val deviceMemoryGB = getDeviceMemoryGB(context)
+            val isMemorySupported = deviceMemoryGB >= config.androidMemory
+            
+            val isSupported = isVersionSupported && isMemorySupported
+            
+            // Fetch latest config in background for next time (regardless of result)
+            fetchAndUpdateConfig(context)
+            
+            return isSupported
+        }
+        
+        /**
+         * Fetch support configuration from API and update local storage
+         * This is called internally and runs asynchronously
+         * @param context Application context
+         */
+        private fun fetchAndUpdateConfig(context: Context) {
+            val apiUrl = configApiUrl ?: return
+            
+            // Use CoroutineScope to run async network request
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val url = URL(apiUrl)
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.connectTimeout = 5000 // 5 seconds timeout
+                    connection.readTimeout = 5000
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    
+                    val responseCode = connection.responseCode
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        val response = connection.inputStream.bufferedReader().use { it.readText() }
+                        
+                        // Use optJSONObject for safer parsing
+                        val jsonObject = JSONObject(response)
+                        val minObject = jsonObject.optJSONObject("min")
+                        
+                        if (minObject != null) {
+                            val configMap = mutableMapOf<String, Any>()
+                            
+                            // Parse androidApiLevel
+                            val androidApiLevel = minObject.optInt("androidApiLevel", 0)
+                            if (androidApiLevel > 0) {
+                                configMap["androidApiLevel"] = androidApiLevel
+                            }
+                            // Also support legacy "androidVersion" key for backward compatibility
+                            val androidVersion = minObject.optInt("androidVersion", 0)
+                            if (androidVersion > 0) {
+                                configMap["androidApiLevel"] = androidVersion
+                            }
+                            
+                            // Parse androidMemory (convert from MB to GB)
+                            val androidMemoryMB = minObject.optInt("androidMemory", 0)
+                            if (androidMemoryMB > 0) {
+                                // Convert MB to GB (divide by 1024)
+                                val androidMemoryGB = androidMemoryMB / 1024
+                                if (androidMemoryGB > 0) {
+                                    configMap["androidMemory"] = androidMemoryGB
+                                }
+                            }
+                            
+                            if (configMap.isNotEmpty()) {
+                                SupportConfigManager.updateConfigFromMap(context, configMap)
+                            }
+                        }
+                    }
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    // Silently fail - network errors should not affect isSupport result
+                    // Configuration will use cached values
+                }
+            }
+        }
+        
+        /**
+         * Get device total memory in GB
+         * @param context Application context
+         * @return Total memory in GB, or 0 if unable to determine
+         */
+        private fun getDeviceMemoryGB(context: Context): Int {
+            return try {
+                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                if (activityManager != null) {
+                    val memInfo = ActivityManager.MemoryInfo()
+                    activityManager.getMemoryInfo(memInfo)
+                    
+                    // totalMem is available from API 16+, and we require Android 10 (API 29)
+                    // so this should always be available
+                    val totalMemoryBytes = memInfo.totalMem
+                    
+                    // Convert bytes to GB (1 GB = 1024 * 1024 * 1024 bytes)
+                    // Round up to ensure we don't incorrectly reject devices
+                    (totalMemoryBytes / (1024.0 * 1024.0 * 1024.0)).toInt()
+                } else {
+                    0
+                }
+            } catch (e: Exception) {
+                // If unable to determine memory, return 0 (will fail support check)
+                0
             }
         }
     }
@@ -92,6 +229,12 @@ class VeryOauthSDK private constructor() {
         config: OAuthConfig,
         callback: (OAuthResult) -> Unit
     ) {
+        // Check if device supports this SDK
+        if (!isSupport(context)) {
+            callback(OAuthResult("", OAuthErrorType.DEVICE_NOT_SUPPORT))
+            return
+        }
+        
         this.authCallback = callback
         
         try {

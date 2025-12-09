@@ -86,6 +86,9 @@ struct ContentView: View {
     @State private var resultColor: Color = .gray
     @State private var isLoading: Bool = false
     
+    // Check device support status
+    private let isDeviceSupported = VeryOauthSDK.isSupport()
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 30) {
@@ -102,6 +105,13 @@ struct ContentView: View {
                     Text("Choose a provider and start OAuth authentication")
                         .font(.body)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    
+                    // Device support status
+                    Text(isDeviceSupported ? "✅ This device is supported by SDK" : "❌ This device is not supported by SDK")
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(isDeviceSupported ? .green : .red)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -205,6 +215,9 @@ struct ContentView: View {
         } else {
             let errorMessage: String
             switch result.error {
+            case .deviceNotSupport:
+                errorMessage = "❌ Device not supported"
+                resultColor = .red
             case .userCanceled:
                 errorMessage = "⚠️ Authentication cancelled by user"
                 resultColor = .orange

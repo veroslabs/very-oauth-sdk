@@ -52,6 +52,9 @@ fun OAuthDemoScreen(
     var resultColor by remember { mutableStateOf(Color.Gray) }
     var isLoading by remember { mutableStateOf(false) }
     
+    // Check device support status
+    val isDeviceSupported = remember { VeryOauthSDK.isSupport(context) }
+    
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -81,6 +84,19 @@ fun OAuthDemoScreen(
                     text = "Choose authentication method and start OAuth authentication",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                
+                // Device support status
+                Text(
+                    text = if (isDeviceSupported) {
+                        "✅ This device is supported by SDK"
+                    } else {
+                        "❌ This device is not supported by SDK"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isDeviceSupported) Color.Green else Color.Red,
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
             }
@@ -114,11 +130,13 @@ fun OAuthDemoScreen(
                                 resultColor = Color.Green
                             } else {
                                 val errorMessage = when (result.error) {
+                                    OAuthErrorType.DEVICE_NOT_SUPPORT -> "Device not supported"
                                     OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
                                     OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
                                     OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
                                     OAuthErrorType.TIMEOUT -> "Request timeout"
                                     OAuthErrorType.NETWORK_ERROR -> "Network error"
+                                    OAuthErrorType.CAMERA_PERMISSION_DENIED -> "Camera permission denied"
                                     else -> "Unknown error occurred"
                                 }
                                 authResult = "❌ Authentication failed: $errorMessage"

@@ -17,14 +17,14 @@ This document first presents the integration APIs, followed by a description of 
 
 ```ruby
 # Podfile
-pod 'VeryOauthSDK', '~> 1.0.17'
+pod 'VeryOauthSDK', '~> 1.0.18'
 ```
 
 #### Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.17")
+    .package(url: "https://github.com/veroslabs/very-oauth-sdk.git", from: "1.0.18")
 ]
 ```
 
@@ -33,22 +33,27 @@ dependencies: [
 ```swift
 import VeryOauthSDK
 
-let config = OAuthConfig(
-    clientId: "your_client_id",
-    redirectUri: "your_redirect_uri",
-    userId: "user_id", // empty string for registration, valid user_id string for verification
-    themeMode: "dark" // dark or light
-)
+// Check if device is supported before authentication
+if VeryOauthSDK.isSupport() {
+    let config = OAuthConfig(
+        clientId: "your_client_id",
+        redirectUri: "your_redirect_uri",
+        userId: "user_id", // empty string for registration, valid user_id string for verification
+        themeMode: "dark" // dark or light
+    )
 
-VeryOauthSDK().authenticate(
-    config: config,
-    presentingViewController: self
-) { result in
-    if result.isSuccess {
-        print("Authentication successful: \(result.code)")
-    } else {
-        print("Authentication failed: \(result.error)")
+    VeryOauthSDK.shared.authenticate(
+        config: config,
+        presentingViewController: self
+    ) { result in
+        if result.isSuccess {
+            print("Authentication successful: \(result.code)")
+        } else {
+            print("Authentication failed: \(result.error)")
+        }
     }
+} else {
+    print("Device is not supported")
 }
 ```
 
@@ -59,7 +64,7 @@ VeryOauthSDK().authenticate(
 ```gradle
 // build.gradle (Module: app)
 dependencies {
-    implementation 'org.very:veryoauthsdk:1.0.17'
+    implementation 'org.very:veryoauthsdk:1.0.18'
 }
 ```
 
@@ -68,32 +73,38 @@ dependencies {
 ```kotlin
 import com.veryoauthsdk.*
 
-val config = OAuthConfig(
-    clientId = "your_client_id",
-    redirectUri = "your_redirect_uri",
-    userId = "user_id" // empty string for registration, valid user_id string for verification
-)
+// Check if device is supported before authentication
+if (VeryOauthSDK.isSupport(context)) {
+    val config = OAuthConfig(
+        clientId = "your_client_id",
+        redirectUri = "your_redirect_uri",
+        userId = "user_id" // empty string for registration, valid user_id string for verification
+    )
 
-VeryOauthSDK.getInstance().authenticate(
-    context = context,
-    config = config,
-    callback = { result ->
-        if (result.isSuccess) {
-            println("Authentication successful: ${result.code}")
-        } else {
-            val errorMessage = when (result.error) {
-                OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
-                OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
-                OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
-                OAuthErrorType.TIMEOUT -> "Request timeout"
-                OAuthErrorType.NETWORK_ERROR -> "Network error"
-                else -> "Unknown error occurred"
+    VeryOauthSDK.getInstance().authenticate(
+        context = context,
+        config = config,
+        callback = { result ->
+            if (result.isSuccess) {
+                println("Authentication successful: ${result.code}")
+            } else {
+                val errorMessage = when (result.error) {
+                    OAuthErrorType.DEVICE_NOT_SUPPORT -> "Device not supported"
+                    OAuthErrorType.USER_CANCELED -> "User cancelled authentication"
+                    OAuthErrorType.VERIFICATION_FAILED -> "Verification failed"
+                    OAuthErrorType.REGISTRATION_FAILED -> "Registration failed"
+                    OAuthErrorType.TIMEOUT -> "Request timeout"
+                    OAuthErrorType.NETWORK_ERROR -> "Network error"
+                    OAuthErrorType.CAMERA_PERMISSION_DENIED -> "Camera permission denied"
+                    else -> "Unknown error occurred"
+                }
+                println("Authentication failed: $errorMessage")
             }
-            println("Authentication failed: $errorMessage")
         }
-    }
-)
-
+    )
+} else {
+    println("Device is not supported")
+}
 ```
 
 ### OAuthConfig Parameters
@@ -123,6 +134,7 @@ If authentication succeeds, the SDK returns a `code` string to the app. The app 
 
 If authentication fails, the SDK returns an `error` to the app. Possible error types include:
 
+- **`DeviceNotSupport`** – The device does not meet the minimum requirements (iOS version, Android API level, or memory).
 - **`UserCanceled`** – The user canceled the authentication process.
 - **`VerificationFailed`** – The palm scan did not match the registered user.
 - **`RegistrationFailed`** – The palm registration was identified as a potential fraud attempt.
@@ -200,17 +212,48 @@ Your backend decodes the JWT `id_token` to verify the user information, especial
 }
 ```
 
+## Device Support Check
+
+The SDK provides an `isSupport()` method to check if the current device meets the minimum requirements before authentication. The SDK automatically checks device support when `authenticate()` is called, but you can also check manually:
+
+### iOS
+
+```swift
+if VeryOauthSDK.isSupport() {
+    // Device is supported, proceed with authentication
+} else {
+    // Device does not meet minimum requirements
+}
+```
+
+### Android
+
+```kotlin
+if (VeryOauthSDK.isSupport(context)) {
+    // Device is supported, proceed with authentication
+} else {
+    // Device does not meet minimum requirements
+}
+```
+
+The SDK automatically fetches the latest support requirements from the server in the background. The default requirements are:
+
+- **iOS**: iOS 16.4+
+- **Android**: Android 10 (API level 29)+ with at least 6GB RAM
+
 ## Requirements
 
 ### iOS
 
-- iOS 12.0+
+- iOS 12.0+ (minimum SDK requirement)
+- iOS 16.4+ (recommended for full support, checked by `isSupport()`)
 - Swift 5.0+
 - Xcode 12.0+
 
 ### Android
 
-- Android API 23+ (Android 7.0)
+- Android API 23+ (Android 7.0) (minimum SDK requirement)
+- Android API 29+ (Android 10) with 6GB+ RAM (recommended for full support, checked by `isSupport()`)
 - Kotlin 1.8+
 - Android Studio 4.0+
 
