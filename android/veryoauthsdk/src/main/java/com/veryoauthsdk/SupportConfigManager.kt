@@ -9,7 +9,7 @@ import android.content.SharedPreferences
  */
 data class SupportConfig(
     val androidApiLevel: Int = 29, // Android 10 (API level 29)
-    val androidMemory: Int = 6 // 6GB in GB
+    val androidMemory: Int = 6144 // Minimum memory requirement in MB (6144 MB = 6GB)
 )
 
 /**
@@ -24,7 +24,7 @@ internal object SupportConfigManager {
     // Default configuration
     private val defaultConfig = SupportConfig(
         androidApiLevel = 29, // Android 10
-        androidMemory = 6 // 6GB
+        androidMemory = 6144 // 6144 MB = 6GB
     )
     
     /**

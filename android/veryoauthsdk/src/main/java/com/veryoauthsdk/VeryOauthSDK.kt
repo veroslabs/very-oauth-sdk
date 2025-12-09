@@ -112,8 +112,15 @@ class VeryOauthSDK private constructor() {
             val isVersionSupported = currentApiLevel >= config.androidApiLevel
             
             // Check memory (RAM) requirement
-            val deviceMemoryGB = getDeviceMemoryGB(context)
-            val isMemorySupported = deviceMemoryGB >= config.androidMemory
+            // Compare: deviceMemoryMB + 1000 >= config.androidMemory
+            val deviceMemoryMB = getDeviceMemoryMB(context)
+            // If memory cannot be determined (returns -1), skip memory check and allow
+            // Only check memory requirement if we successfully retrieved the memory value
+            val isMemorySupported = if (deviceMemoryMB == -1) {
+                true // Cannot determine memory, allow device to pass
+            } else {
+                deviceMemoryMB + 1000 >= config.androidMemory
+            }
             
             val isSupported = isVersionSupported && isMemorySupported
             
@@ -163,14 +170,10 @@ class VeryOauthSDK private constructor() {
                                 configMap["androidApiLevel"] = androidVersion
                             }
                             
-                            // Parse androidMemory (convert from MB to GB)
+                            // Parse androidMemory (keep in MB, no conversion needed)
                             val androidMemoryMB = minObject.optInt("androidMemory", 0)
                             if (androidMemoryMB > 0) {
-                                // Convert MB to GB (divide by 1024)
-                                val androidMemoryGB = androidMemoryMB / 1024
-                                if (androidMemoryGB > 0) {
-                                    configMap["androidMemory"] = androidMemoryGB
-                                }
+                                configMap["androidMemory"] = androidMemoryMB
                             }
                             
                             if (configMap.isNotEmpty()) {
@@ -187,11 +190,11 @@ class VeryOauthSDK private constructor() {
         }
         
         /**
-         * Get device total memory in GB
+         * Get device total memory in MB
          * @param context Application context
-         * @return Total memory in GB, or 0 if unable to determine
+         * @return Total memory in MB, or -1 if unable to determine (to distinguish from 0MB)
          */
-        private fun getDeviceMemoryGB(context: Context): Int {
+        private fun getDeviceMemoryMB(context: Context): Int {
             return try {
                 val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                 if (activityManager != null) {
@@ -202,15 +205,20 @@ class VeryOauthSDK private constructor() {
                     // so this should always be available
                     val totalMemoryBytes = memInfo.totalMem
                     
-                    // Convert bytes to GB (1 GB = 1024 * 1024 * 1024 bytes)
-                    // Round up to ensure we don't incorrectly reject devices
-                    (totalMemoryBytes / (1024.0 * 1024.0 * 1024.0)).toInt()
+                    if (totalMemoryBytes <= 0) {
+                        // Invalid memory value, return -1 to indicate failure
+                        return -1
+                    }
+                    
+                    // Convert bytes to MB (1 MB = 1024 * 1024 bytes)
+                    val memoryMB = totalMemoryBytes / (1024.0 * 1024.0)
+                    memoryMB.toInt()
                 } else {
-                    0
+                    -1
                 }
             } catch (e: Exception) {
-                // If unable to determine memory, return 0 (will fail support check)
-                0
+                // If unable to determine memory, return -1 (will skip memory check)
+                -1
             }
         }
     }

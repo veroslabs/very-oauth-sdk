@@ -289,8 +289,30 @@ public class VeryOauthSDK: NSObject {
     ///   - version2: Second version string (e.g., "16.4")
     /// - Returns: Comparison result: negative if version1 < version2, 0 if equal, positive if version1 > version2
     private static func compareVersion(_ version1: String, _ version2: String) -> Int {
-        let components1 = version1.split(separator: ".").compactMap { Int($0) }
-        let components2 = version2.split(separator: ".").compactMap { Int($0) }
+        // Handle empty strings
+        guard !version1.isEmpty && !version2.isEmpty else {
+            // If either version is empty, treat as equal (edge case)
+            return version1.isEmpty && version2.isEmpty ? 0 : (version1.isEmpty ? -1 : 1)
+        }
+        
+        // Split version strings and extract numeric components
+        // Handle cases like "16.4.1-beta" by extracting only the numeric prefix
+        let components1 = version1.split(separator: ".").compactMap { component -> Int? in
+            // Extract numeric prefix from component (e.g., "1-beta" -> 1)
+            let numericPart = String(component.prefix { $0.isNumber })
+            return Int(numericPart)
+        }
+        
+        let components2 = version2.split(separator: ".").compactMap { component -> Int? in
+            // Extract numeric prefix from component (e.g., "1-beta" -> 1)
+            let numericPart = String(component.prefix { $0.isNumber })
+            return Int(numericPart)
+        }
+        
+        // If no valid components found, treat as invalid version
+        guard !components1.isEmpty || !components2.isEmpty else {
+            return 0 // Both invalid, treat as equal
+        }
         
         let maxCount = max(components1.count, components2.count)
         
