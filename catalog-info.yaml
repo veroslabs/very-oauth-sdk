@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: very-oauth-sdk
+  description: 'Palm-based OAuth2 client SDK for iOS + Android (ASWebAuthenticationSession).'
+  annotations:
+    github.com/project-slug: veroslabs/very-oauth-sdk
+  tags: [swift, kotlin, sdk, oauth]
+spec:
+  type: library
+  owner: group:default/platform
+  system: veryai
+  lifecycle: production
+  consumesApis:
+    - veros-connect-service-oauth2
+    - veros-api-sdk
