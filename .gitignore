@@ -306,3 +306,5 @@ jspm_packages/
 !.yarn/versions
 
 upload-package/
+# SwiftPM build output
+.build/

@@ -34,30 +34,4 @@ jobs:
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOA_PODS_TRUNK_TOKEN }}
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## VeryOauthSDK iOS v${{ github.ref_name }}
-
-            ### Features
-            - OAuth 2.0 authentication
-            - Dual authentication modes (ASWebAuthenticationSession / WKWebView)
-            - Camera permission support
-            - Modern Swift API
-
-            ### Installation
-            ```ruby
-            pod 'VeryOauthSDK'
-            ```
-
-            Or via Swift Package Manager:
-            ```
-            https://github.com/veroslabs/very-oauth-sdk.git
-            ```
-          draft: false
-          prerelease: false
+      # GitHub release is created by android-release.yml only.

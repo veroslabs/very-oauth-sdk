@@ -254,7 +254,7 @@ The SDK automatically fetches the latest support requirements from the server in
 
 - Android API 23+ (Android 7.0) (minimum SDK requirement)
 - Android API 29+ (Android 10) with 6GB+ RAM (recommended for full support, checked by `isSupport()`)
-- Kotlin 1.8+
+- Kotlin 2.1+
 - Android Studio 4.0+
 
 ## Setup
